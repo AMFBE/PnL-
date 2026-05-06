@@ -19,42 +19,83 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 // ─── PNL CONTEXT ──────────────────────────────────────────────────────────────
 const PnLContext = createContext(null);
 
+const LS_KEY = (uid) => `pnl_local_${uid}`;
+
 function PnLProvider({ children, user }) {
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [saveError, setSaveError] = useState(null);
 
+  // Load data: try Supabase first, fall back to localStorage
   useEffect(() => {
     if (!user) { setData({}); setLoading(false); return; }
     setLoading(true);
+
+    // Always load localStorage immediately so UI is fast
+    try {
+      const local = localStorage.getItem(LS_KEY(user.id));
+      if (local) setData(JSON.parse(local));
+    } catch(e) {}
+
+    // Then sync from Supabase
     supabase
       .from("pnl_entries")
-      .select("*")
+      .select("date_key, pnl, adherence")
       .eq("user_id", user.id)
       .then(({ data: rows, error }) => {
-        if (error) { console.error("Load error:", error); setLoading(false); return; }
-        const map = {};
-        (rows || []).forEach(r => { map[r.date_key] = { pnl: r.pnl, adherence: r.adherence }; });
-        setData(map);
+        if (error) {
+          console.error("Supabase load error:", error.message, error.code);
+          setLoading(false);
+          return;
+        }
+        if (rows && rows.length > 0) {
+          const map = {};
+          rows.forEach(r => { map[r.date_key] = { pnl: r.pnl, adherence: r.adherence }; });
+          setData(map);
+          // Sync to localStorage as backup
+          try { localStorage.setItem(LS_KEY(user.id), JSON.stringify(map)); } catch(e) {}
+        }
         setLoading(false);
       });
-  }, [user]);
+  }, [user?.id]);
 
   const saveDay = useCallback(async (dateKey, entry) => {
     if (!user) return;
-    setData(prev => ({ ...prev, [dateKey]: entry }));
-    await supabase.from("pnl_entries").upsert({
-      user_id: user.id,
-      date_key: dateKey,
-      pnl: entry.pnl,
-      adherence: entry.adherence,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id,date_key" });
-  }, [user]);
+
+    // 1. Update local state immediately
+    const next = (prev) => ({ ...prev, [dateKey]: entry });
+    setData(prev => {
+      const updated = next(prev);
+      // 2. Save to localStorage immediately as backup
+      try { localStorage.setItem(LS_KEY(user.id), JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
+
+    // 3. Save to Supabase
+    const { error } = await supabase
+      .from("pnl_entries")
+      .upsert(
+        {
+          user_id: user.id,
+          date_key: dateKey,
+          pnl: entry.pnl === "" || entry.pnl === null ? null : Number(entry.pnl),
+          adherence: entry.adherence === true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,date_key" }
+      );
+
+    if (error) {
+      console.error("Supabase save error:", error.message, error.code, error.details);
+      setSaveError(error.message);
+      setTimeout(() => setSaveError(null), 4000);
+    }
+  }, [user?.id]);
 
   const getDay = useCallback((dateKey) => data[dateKey] || null, [data]);
 
   return (
-    <PnLContext.Provider value={{ data, saveDay, getDay, loading }}>
+    <PnLContext.Provider value={{ data, saveDay, getDay, loading, saveError }}>
       {children}
     </PnLContext.Provider>
   );
@@ -515,7 +556,7 @@ function InputModal({ day, month, year, onClose }) {
 
 // ─── MAIN CALENDAR ─────────────────────────────────────────────────────────────
 function Calendar({ user, onLogout }) {
-  const { data, loading } = usePnL();
+  const { data, loading, saveError } = usePnL();
   const today = new Date();
   const [yr, setYr] = useState(today.getFullYear());
   const [mo, setMo] = useState(today.getMonth());
@@ -627,6 +668,28 @@ function Calendar({ user, onLogout }) {
       <AnimatePresence>
         {modalDay !== null && (
           <InputModal day={modalDay} month={mo} year={yr} onClose={() => setModalDay(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* Save error toast */}
+      <AnimatePresence>
+        {saveError && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            style={{
+              position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
+              zIndex: 999, background: "rgba(239,68,68,0.15)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(239,68,68,0.4)",
+              borderRadius: 14, padding: "12px 20px",
+              color: "#f87171", fontSize: 12, fontFamily: "monospace",
+              boxShadow: "0 8px 32px rgba(239,68,68,0.2)",
+            }}
+          >
+            ⚠ Speicherfehler: {saveError}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
