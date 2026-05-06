@@ -5,9 +5,16 @@ import { createClient } from "@supabase/supabase-js";
 // ─── SUPABASE CONFIG ──────────────────────────────────────────────────────────
 // 🔧 Replace these two values after setting up Supabase (see setup guide below)
 const SUPABASE_URL = "https://rymrwshgpdwflsvazzan.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_nReCD5iut9Vn0WvWqO9QqA_JkUhbI19";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5bXJ3c2hncGR3ZmxzdmF6emFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4ODIzMzMsImV4cCI6MjA5MzQ1ODMzM30.5aUbpTrt5YHCismzg5L_ynMqlTDZTnGK3nbEU2IH_24";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    storageKey: "trading-journal-auth",
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 // ─── PNL CONTEXT ──────────────────────────────────────────────────────────────
 const PnLContext = createContext(null);
@@ -23,7 +30,8 @@ function PnLProvider({ children, user }) {
       .from("pnl_entries")
       .select("*")
       .eq("user_id", user.id)
-      .then(({ data: rows }) => {
+      .then(({ data: rows, error }) => {
+        if (error) { console.error("Load error:", error); setLoading(false); return; }
         const map = {};
         (rows || []).forEach(r => { map[r.date_key] = { pnl: r.pnl, adherence: r.adherence }; });
         setData(map);
@@ -652,7 +660,8 @@ export default function App() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error("Session error:", error);
       setUser(session?.user ?? null);
       setChecking(false);
     });
