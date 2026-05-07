@@ -62,6 +62,19 @@ function PnLProvider({ children, user }) {
   const saveDay = useCallback(async (dateKey, entry) => {
     if (!user) return;
 
+    // Handle delete (entry === null)
+    if (entry === null) {
+      setData(prev => {
+        const updated = { ...prev };
+        delete updated[dateKey];
+        try { localStorage.setItem(LS_KEY(user.id), JSON.stringify(updated)); } catch(e) {}
+        return updated;
+      });
+      await supabase.from("pnl_entries").delete()
+        .eq("user_id", user.id).eq("date_key", dateKey);
+      return;
+    }
+
     // 1. Update local state immediately
     const next = (prev) => ({ ...prev, [dateKey]: entry });
     setData(prev => {
@@ -315,6 +328,7 @@ const CalendarCell = memo(function CalendarCell({ day, month, year, index, onOpe
   const { getDay } = usePnL();
   const [hovered, setHovered] = useState(false);
   const ref = useRef(null);
+  const isTouchDevice = typeof window !== "undefined" && window.matchMedia("(hover: none)").matches;
   const mx = useMotionValue(0.5), my = useMotionValue(0.5);
 
   useEffect(() => {
@@ -349,7 +363,7 @@ const CalendarCell = memo(function CalendarCell({ day, month, year, index, onOpe
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", stiffness: 340, damping: 26, delay: index * 0.020 }}
       style={{ position: "relative", cursor: "pointer", transform: "translateZ(0)" }}
-      onHoverStart={() => setHovered(true)}
+      onHoverStart={() => { if (!isTouchDevice) setHovered(true); }}
       onHoverEnd={() => setHovered(false)}
       onClick={() => onOpen(day)}
     >
@@ -378,7 +392,7 @@ const CalendarCell = memo(function CalendarCell({ day, month, year, index, onOpe
             : isToday ? "rgba(139,92,246,0.55)"
             : "rgba(255,255,255,0.08)"
           }`,
-          borderRadius: 14, padding: "10px 7px", minHeight: 74,
+          borderRadius: 10, padding: "7px 4px", minHeight: 62,
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between",
           boxShadow: adherence === true
             ? "inset 0 0 20px rgba(16,185,129,0.17), 0 0 14px rgba(16,185,129,0.28)"
@@ -389,7 +403,7 @@ const CalendarCell = memo(function CalendarCell({ day, month, year, index, onOpe
           transition: "box-shadow 0.35s, border-color 0.35s",
         }}
       >
-        {hovered && (
+        {hovered && !isTouchDevice && (
           <motion.div style={{
             position: "absolute", inset: 0, borderRadius: 13, pointerEvents: "none", zIndex: 3,
             background: `radial-gradient(circle at calc(${gx} + 50%) calc(${gy} + 50%), rgba(255,255,255,0.08) 0%, transparent 68%)`,
@@ -397,14 +411,20 @@ const CalendarCell = memo(function CalendarCell({ day, month, year, index, onOpe
         )}
 
         <div style={{
-          fontSize: 10, fontWeight: isToday ? 700 : 500, letterSpacing: "0.06em",
+          fontSize: 9, fontWeight: isToday ? 700 : 500, letterSpacing: "0.04em",
           color: isToday ? "#a78bfa" : "rgba(255,255,255,0.42)",
           fontFamily: "'DM Mono', monospace", alignSelf: "flex-start", paddingLeft: 3,
         }}>{day}</div>
 
         {hasData && pnl != null ? (
           <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", color: pnl >= 0 ? "#34d399" : "#f87171", letterSpacing: "-0.02em" }}>
-            {pnl >= 0 ? "+" : "−"}{Math.abs(pnl).toLocaleString("de-DE")}
+            {(() => {
+              const abs = Math.abs(pnl);
+              const sign = pnl >= 0 ? "+" : "−";
+              if (abs >= 1000000) return sign + (abs / 1000000).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + "M";
+              if (abs >= 1000) return sign + (abs / 1000).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + "K";
+              return sign + abs.toLocaleString("de-DE");
+            })()}
           </div>
         ) : (
           <div style={{ width: 18, height: 2, background: "rgba(255,255,255,0.09)", borderRadius: 2 }} />
@@ -427,7 +447,7 @@ const CalendarCell = memo(function CalendarCell({ day, month, year, index, onOpe
       </motion.div>
 
       <AnimatePresence>
-        {hovered && (
+        {hovered && !isTouchDevice && (
           <HoverCard entry={entry} dateStr={`${String(day).padStart(2,"0")}.${String(month+1).padStart(2,"0")}.${year}`} />
         )}
       </AnimatePresence>
@@ -444,12 +464,20 @@ function InputModal({ day, month, year, onClose }) {
   const [adherence, setAdherence] = useState(existing?.adherence ?? false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const hasEntry = existing !== null;
 
   const handleSave = async () => {
     setSaving(true);
     await saveDay(dateKey, { pnl: pnl === "" ? null : Number(pnl), adherence });
     setSaved(true); setSaving(false);
     setTimeout(onClose, 500);
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    await saveDay(dateKey, null);
+    onClose();
   };
 
   return (
@@ -549,17 +577,34 @@ function InputModal({ day, month, year, onClose }) {
             {saving ? "Speichern..." : saved ? "✓ Gespeichert" : "Speichern"}
           </motion.button>
         </div>
+
+        {hasEntry && (
+          <motion.button
+            onClick={handleDelete}
+            whileTap={{ scale: 0.96 }}
+            animate={{
+              background: confirmDelete ? "rgba(239,68,68,0.2)" : "transparent",
+              borderColor: confirmDelete ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.07)",
+            }}
+            style={{
+              width: "100%", marginTop: 8, padding: "11px", borderRadius: 13,
+              border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer",
+              fontSize: 12, fontWeight: 600, fontFamily: "monospace",
+              color: confirmDelete ? "#f87171" : "rgba(255,255,255,0.25)",
+              transition: "color 0.2s",
+            }}
+          >
+            {confirmDelete ? "⚠ Nochmal tippen zum Bestätigen" : "🗑 Eintrag löschen"}
+          </motion.button>
+        )}
       </motion.div>
     </motion.div>
   );
 }
 
 // ─── MAIN CALENDAR ─────────────────────────────────────────────────────────────
-function Calendar({ user, onLogout }) {
+function Calendar({ yr, mo, setYr, setMo }) {
   const { data, loading, saveError } = usePnL();
-  const today = new Date();
-  const [yr, setYr] = useState(today.getFullYear());
-  const [mo, setMo] = useState(today.getMonth());
   const [modalDay, setModalDay] = useState(null);
   const [navDir, setNavDir] = useState(1);
   const [calKey, setCalKey] = useState(0);
@@ -597,38 +642,70 @@ function Calendar({ user, onLogout }) {
   return (
     <div style={{ minHeight: "100vh", position: "relative" }}>
       <MeshBackground />
-      <div style={{ position: "relative", zIndex: 10, maxWidth: 800, margin: "0 auto", padding: "28px 18px 56px" }}>
+      <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top, 20px) 12px 80px" }}>
 
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
-          <div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace", marginBottom: 4 }}>TRADING JOURNAL</div>
-            <div style={{ fontSize: 32, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
-              {MONTHS[mo]} <span style={{ color: "rgba(255,255,255,0.22)", fontSize: 22 }}>{yr}</span>
-            </div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.22)", fontFamily: "monospace", marginTop: 4 }}>{user.email}</div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
-            <div style={{ display: "flex", gap: 10 }}>
-              <StatPill label="Monats-PnL" value={fmt(totalPnL) || "—"} color={totalPnL >= 0 ? "#34d399" : "#f87171"} />
-              <StatPill label="Disziplin" value={`${adherencePct}%`} color="#a78bfa" />
-            </div>
-            <button onClick={onLogout} style={{
-              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)",
-              color: "rgba(255,255,255,0.35)", fontSize: 10, padding: "6px 12px", borderRadius: 8,
-              cursor: "pointer", fontFamily: "monospace", letterSpacing: "0.08em",
-            }}>AUSLOGGEN</button>
+        {/* Header */}
+        <div style={{ paddingTop: 16, marginBottom: 12 }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>TRADING JOURNAL</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+            {MONTHS[mo]} <span style={{ color: "rgba(255,255,255,0.22)", fontSize: 20 }}>{yr}</span>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        {/* Header row 2: Stats */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <StatPill label="Monats-PnL" value={fmt(totalPnL) || "—"} color={totalPnL >= 0 ? "#34d399" : "#f87171"} />
+          <StatPill label="Disziplin" value={`${adherencePct}%`} color="#a78bfa" />
+        </div>
+
+        {/* Month nav with mini target bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
           <NavBtn onClick={() => navigate(-1)}>‹</NavBtn>
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+            {(() => {
+              const monthKey = `${yr}-${String(mo+1).padStart(2,"0")}`;
+              const savedTarget = Number(localStorage.getItem(`target_${monthKey}`) || 0);
+              const pct = savedTarget > 0 ? Math.min(Math.max(totalPnL / savedTarget, 0), 1) : 0;
+              const hasPct = savedTarget > 0;
+              return (
+                <>
+                  <div style={{ height: hasPct ? 5 : 1, background: "rgba(255,255,255,0.06)", borderRadius: 99, overflow: "hidden" }}>
+                    {hasPct && (
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct * 100}%` }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        style={{
+                          height: "100%", borderRadius: 99,
+                          background: pct >= 1
+                            ? "linear-gradient(90deg,#059669,#34d399)"
+                            : pct >= 0.5
+                            ? "linear-gradient(90deg,#d97706,#fbbf24)"
+                            : "linear-gradient(90deg,#6366f1,#8b5cf6)",
+                          boxShadow: pct >= 1 ? "0 0 6px rgba(52,211,153,0.6)" : "none",
+                        }}
+                      />
+                    )}
+                  </div>
+                  {hasPct && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 7, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>Ziel</span>
+                      <span style={{ fontSize: 7, fontFamily: "monospace",
+                        color: pct >= 1 ? "#34d399" : pct >= 0.5 ? "#fbbf24" : "#a78bfa" }}>
+                        {Math.round(pct * 100)}%
+                      </span>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
           <NavBtn onClick={() => navigate(1)}>›</NavBtn>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
           {DAYS.map(d => (
-            <div key={d} style={{ textAlign: "center", fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "monospace", letterSpacing: "0.1em", padding: "3px 0" }}>{d}</div>
+            <div key={d} style={{ textAlign: "center", fontSize: 8, color: "rgba(255,255,255,0.22)", fontFamily: "monospace", letterSpacing: "0.05em", padding: "2px 0" }}>{d}</div>
           ))}
         </div>
 
@@ -644,7 +721,7 @@ function Calendar({ user, onLogout }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -navDir * 28 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}
+              style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}
             >
               {cells.map((day, i) => day === null ? <div key={`e-${i}`} /> : (
                 <CalendarCell key={`${yr}-${mo}-${day}`}
@@ -656,10 +733,18 @@ function Calendar({ user, onLogout }) {
         )}
 
         <div style={{ display: "flex", gap: 20, marginTop: 22, justifyContent: "center" }}>
-          {[["#10b981","Plan befolgt"],["#ef4444","Plan nicht befolgt"],["rgba(255,255,255,0.14)","Keine Daten"]].map(([c,l]) => (
-            <div key={l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: c, boxShadow: c.startsWith("rgba") ? "none" : `0 0 5px ${c}` }} />
-              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", fontFamily: "monospace" }}>{l}</span>
+          {[
+            { color: "#10b981", label: "Plan befolgt", icon: "dot" },
+            { color: "#ef4444", label: "Plan nicht befolgt", icon: "cross" },
+            { color: "rgba(255,255,255,0.14)", label: "Keine Daten", icon: "dot" },
+          ].map(({ color, label, icon }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {icon === "cross" ? (
+                <span style={{ fontSize: 10, color, fontWeight: 700, lineHeight: 1 }}>✕</span>
+              ) : (
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, boxShadow: color.startsWith("rgba") ? "none" : `0 0 5px ${color}` }} />
+              )}
+              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", fontFamily: "monospace" }}>{label}</span>
             </div>
           ))}
         </div>
@@ -698,8 +783,8 @@ function Calendar({ user, onLogout }) {
 
 function StatPill({ label, value, color }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12,
-      padding: "9px 13px", backdropFilter: "blur(14px)", textAlign: "right" }}>
+    <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12,
+      padding: "9px 13px", backdropFilter: "blur(14px)", textAlign: "center" }}>
       <div style={{ fontSize: 8, color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em", fontFamily: "monospace", marginBottom: 2 }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
     </div>
@@ -714,6 +799,509 @@ function NavBtn({ onClick, children }) {
         display: "flex", alignItems: "center", justifyContent: "center" }}>
       {children}
     </motion.button>
+  );
+}
+
+
+// ─── STATS TAB ────────────────────────────────────────────────────────────────
+function StatsTab({ yr, mo, setYr, setMo }) {
+  const { data } = usePnL();
+  const today = new Date();
+
+  // Month entries
+  const monthKey = `${yr}-${String(mo+1).padStart(2,"0")}`;
+  const monthEntries = Object.entries(data)
+    .filter(([k]) => k.startsWith(monthKey))
+    .sort(([a],[b]) => a.localeCompare(b));
+
+  const totalPnL = monthEntries.reduce((s,[,v]) => s + (v.pnl||0), 0);
+  const adherenceDays = monthEntries.filter(([,v]) => v.adherence).length;
+  const winDays = monthEntries.filter(([,v]) => v.pnl > 0).length;
+  const lossDays = monthEntries.filter(([,v]) => v.pnl < 0).length;
+  const daysInMonth = new Date(yr, mo+1, 0).getDate();
+  const [target, setTarget] = useState(() => {
+    try { return Number(localStorage.getItem(`target_${monthKey}`) || 0); } catch { return 0; }
+  });
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [tempTarget, setTempTarget] = useState("");
+
+  const saveTarget = () => {
+    const val = Number(tempTarget);
+    setTarget(val);
+    try { localStorage.setItem(`target_${monthKey}`, val); } catch {}
+    setEditingTarget(false);
+  };
+
+  const progress = target > 0 ? Math.min(totalPnL / target, 1) : 0;
+  const progressPct = target > 0 ? Math.round((totalPnL / target) * 100) : 0;
+
+  // Chart data: daily pnl for month
+  const chartData = [];
+  let cumulative = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${monthKey}-${String(d).padStart(2,"0")}`;
+    const entry = data[key];
+    const pnl = entry?.pnl || 0;
+    cumulative += pnl;
+    if (entry) chartData.push({ d, pnl, cumulative, hasData: true });
+    else chartData.push({ d, pnl: 0, cumulative, hasData: false });
+  }
+
+  const filledData = chartData.filter(p => p.hasData);
+  const maxAbs = filledData.length > 0 ? Math.max(...filledData.map(p => Math.abs(p.pnl)), 1) : 1;
+  const maxCum = Math.max(...chartData.map(p => Math.abs(p.cumulative)), 1);
+
+  const navigate = (dir) => {
+    if (dir === -1) { if (mo === 0) { setMo(11); setYr(y => y-1); } else setMo(m => m-1); }
+    else { if (mo === 11) { setMo(0); setYr(y => y+1); } else setMo(m => m+1); }
+  };
+
+  const fmtShort = (n) => {
+    if (!n) return "0";
+    const abs = Math.abs(n);
+    const sign = n >= 0 ? "+" : "−";
+    if (abs >= 1000000) return sign + (abs/1000000).toFixed(1) + "M";
+    if (abs >= 1000) return sign + (abs/1000).toFixed(1) + "K";
+    return sign + abs;
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", position: "relative" }}>
+      <MeshBackground />
+      <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top,20px) 14px 100px" }}>
+
+        {/* Header + nav */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 16, marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>STATISTIKEN</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif", letterSpacing: "-0.02em" }}>
+              {MONTHS[mo]} <span style={{ color: "rgba(255,255,255,0.22)", fontSize: 18 }}>{yr}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <NavBtn onClick={() => navigate(-1)}>‹</NavBtn>
+            <NavBtn onClick={() => navigate(1)}>›</NavBtn>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+          <GlassTile label="Monats-PnL" value={fmtShort(totalPnL) + " €"} color={totalPnL >= 0 ? "#34d399" : "#f87171"} />
+          <GlassTile label="Disziplin" value={monthEntries.length > 0 ? `${Math.round(adherenceDays/monthEntries.length*100)}%` : "—"} color="#a78bfa" />
+          <GlassTile label="Win-Tage" value={winDays} color="#34d399" />
+          <GlassTile label="Loss-Tage" value={lossDays} color="#f87171" />
+        </div>
+
+        {/* Monthly Target */}
+        <div style={{
+          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
+          padding: "18px 18px 16px", marginBottom: 16,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace" }}>MONATSZIEL</div>
+            <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setEditingTarget(true); setTempTarget(target || ""); }}
+              style={{ fontSize: 10, color: "#a78bfa", background: "none", border: "none", cursor: "pointer", fontFamily: "monospace" }}>
+              {target > 0 ? "ÄNDERN" : "SETZEN"}
+            </motion.button>
+          </div>
+
+          {editingTarget ? (
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <input type="number" value={tempTarget} onChange={e => setTempTarget(e.target.value)}
+                placeholder="Ziel in €" autoFocus
+                style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.5)",
+                  borderRadius: 10, padding: "10px 12px", color: "white", fontSize: 16,
+                  fontFamily: "monospace", outline: "none" }}
+              />
+              <motion.button whileTap={{ scale: 0.95 }} onClick={saveTarget}
+                style={{ padding: "10px 16px", borderRadius: 10, border: "none",
+                  background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white",
+                  fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "monospace" }}>
+                OK
+              </motion.button>
+            </div>
+          ) : null}
+
+          {target > 0 ? (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>
+                  {fmtShort(totalPnL)} € von {fmtShort(target)} €
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "monospace",
+                  color: progressPct >= 100 ? "#34d399" : progressPct >= 50 ? "#fbbf24" : "#f87171" }}>
+                  {progressPct}%
+                </span>
+              </div>
+              {/* Progress bar */}
+              <div style={{ height: 10, background: "rgba(255,255,255,0.07)", borderRadius: 99, overflow: "hidden" }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.max(0, Math.min(100, progressPct))}%` }}
+                  transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                  style={{
+                    height: "100%", borderRadius: 99,
+                    background: progressPct >= 100
+                      ? "linear-gradient(90deg,#059669,#34d399)"
+                      : progressPct >= 50
+                      ? "linear-gradient(90deg,#d97706,#fbbf24)"
+                      : "linear-gradient(90deg,#dc2626,#f87171)",
+                    boxShadow: progressPct >= 100 ? "0 0 10px rgba(52,211,153,0.5)" : "none",
+                  }}
+                />
+              </div>
+              {progressPct >= 100 && (
+                <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "#34d399", fontFamily: "monospace" }}>
+                  🎯 Ziel erreicht!
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ textAlign: "center", padding: "8px 0", fontSize: 12, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>
+              Kein Ziel gesetzt
+            </div>
+          )}
+        </div>
+
+        {/* Bar Chart - Daily PnL */}
+        <div style={{
+          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
+          padding: "18px 14px 14px", marginBottom: 16,
+        }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 16 }}>TÄGLICHER PNL</div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 80 }}>
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const entry = chartData[i];
+              const hasData = entry?.hasData;
+              const pnl = entry?.pnl || 0;
+              const h = hasData ? Math.max(4, (Math.abs(pnl) / maxAbs) * 72) : 3;
+              const isPos = pnl >= 0;
+              return (
+                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                  <motion.div
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: 1 }}
+                    transition={{ delay: i * 0.01, duration: 0.4, ease: "easeOut" }}
+                    style={{
+                      width: "100%", height: h,
+                      background: !hasData ? "rgba(255,255,255,0.06)"
+                        : isPos ? "linear-gradient(180deg,rgba(52,211,153,0.9),rgba(16,185,129,0.5))"
+                        : "linear-gradient(180deg,rgba(248,113,113,0.9),rgba(239,68,68,0.5))",
+                      borderRadius: "3px 3px 2px 2px",
+                      boxShadow: hasData ? (isPos ? "0 0 4px rgba(52,211,153,0.3)" : "0 0 4px rgba(248,113,113,0.3)") : "none",
+                      transformOrigin: "bottom",
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>1</span>
+            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>{Math.round(daysInMonth/2)}</span>
+            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>{daysInMonth}</span>
+          </div>
+        </div>
+
+        {/* Cumulative line chart */}
+        <div style={{
+          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
+          padding: "18px 14px 14px",
+        }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 16 }}>KUMULATIVER GEWINN</div>
+          <svg width="100%" height="90" viewBox={`0 0 ${daysInMonth} 90`} preserveAspectRatio="none"
+            style={{ display: "block", overflow: "visible" }}>
+            <defs>
+              <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={totalPnL >= 0 ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)"} />
+                <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+              </linearGradient>
+            </defs>
+            {/* Zero line */}
+            <line x1={0} y1={45} x2={daysInMonth} y2={45} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+            {/* Area fill */}
+            {chartData.length > 1 && (() => {
+              const pts = chartData.map((p,i) => {
+                const y = 45 - (p.cumulative / maxCum) * 40;
+                return `${i},${y}`;
+              });
+              const area = `M${pts.join("L")}L${daysInMonth-1},45L0,45Z`;
+              return <path d={area} fill="url(#lineGrad)" />;
+            })()}
+            {/* Line */}
+            {chartData.length > 1 && (() => {
+              const pts = chartData.map((p,i) => {
+                const y = 45 - (p.cumulative / maxCum) * 40;
+                return `${i},${y}`;
+              });
+              return <polyline
+                points={pts.join(" ")}
+                fill="none"
+                stroke={totalPnL >= 0 ? "#34d399" : "#f87171"}
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />;
+            })()}
+            {/* End dot */}
+            {chartData.length > 0 && (() => {
+              const last = chartData[chartData.length - 1];
+              const y = 45 - (last.cumulative / maxCum) * 40;
+              return <circle cx={daysInMonth-1} cy={y} r="2.5"
+                fill={totalPnL >= 0 ? "#34d399" : "#f87171"}
+                style={{ filter: `drop-shadow(0 0 4px ${totalPnL >= 0 ? "#34d399" : "#f87171"})` }}
+              />;
+            })()}
+          </svg>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>0</span>
+            <span style={{ fontSize: 9, fontFamily: "monospace", fontWeight: 700,
+              color: totalPnL >= 0 ? "#34d399" : "#f87171" }}>{fmtShort(totalPnL)} €</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GlassTile({ label, value, color }) {
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+      border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16,
+      padding: "14px 14px 12px",
+    }}>
+      <div style={{ fontSize: 8, color: "rgba(255,255,255,0.28)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 800, color, fontFamily: "'DM Mono', monospace", letterSpacing: "-0.02em" }}>{value}</div>
+    </div>
+  );
+}
+
+// ─── PROFILE TAB ──────────────────────────────────────────────────────────────
+function ProfileTab({ user, onLogout }) {
+  const [changingPw, setChangingPw] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const [pwMsg, setPwMsg] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+
+  const maskedEmail = user.email
+    ? user.email.slice(0,3) + "***@" + user.email.split("@")[1]
+    : "—";
+
+  const handleChangePw = async () => {
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    if (error) setPwMsg("Fehler: " + error.message);
+    else { setPwMsg("✓ Passwort geändert!"); setNewPw(""); setChangingPw(false); }
+    setTimeout(() => setPwMsg(""), 3000);
+  };
+
+  const handleDelete = async () => {
+    if (deleteConfirm !== "LÖSCHEN") return;
+    await supabase.from("pnl_entries").delete().eq("user_id", user.id);
+    await supabase.auth.signOut();
+    onLogout();
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", position: "relative" }}>
+      <MeshBackground />
+      <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top,20px) 14px 100px" }}>
+
+        <div style={{ paddingTop: 16, marginBottom: 28 }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>KONTO</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>Profil</div>
+        </div>
+
+        {/* Avatar */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 28 }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: "50%",
+            background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 28, marginBottom: 12,
+            boxShadow: "0 0 24px rgba(99,102,241,0.4)",
+          }}>📈</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>{maskedEmail}</div>
+        </div>
+
+        {/* Sections */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+          {/* Change password */}
+          <div style={{
+            background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "hidden",
+          }}>
+            <motion.button whileTap={{ scale: 0.98 }} onClick={() => setChangingPw(v => !v)}
+              style={{
+                width: "100%", padding: "18px 20px", background: "none", border: "none",
+                display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer",
+              }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 18 }}>🔑</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>Passwort ändern</span>
+              </div>
+              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 16 }}>{changingPw ? "▲" : "▶"}</span>
+            </motion.button>
+            <AnimatePresence>
+              {changingPw && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <div style={{ padding: "0 20px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+                    <input type="password" placeholder="Neues Passwort" value={newPw}
+                      onChange={e => setNewPw(e.target.value)}
+                      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 10, padding: "12px 14px", color: "white", fontSize: 14,
+                        fontFamily: "monospace", outline: "none" }}
+                    />
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={handleChangePw}
+                      style={{ padding: "12px", borderRadius: 10, border: "none",
+                        background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                        color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "monospace" }}>
+                      Speichern
+                    </motion.button>
+                    {pwMsg && <div style={{ fontSize: 12, color: pwMsg.startsWith("✓") ? "#34d399" : "#f87171", fontFamily: "monospace", textAlign: "center" }}>{pwMsg}</div>}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Logout */}
+          <motion.button whileTap={{ scale: 0.97 }} onClick={onLogout}
+            style={{
+              width: "100%", padding: "18px 20px",
+              background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
+              display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
+            }}>
+            <span style={{ fontSize: 18 }}>🚪</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>Ausloggen</span>
+          </motion.button>
+
+          {/* Delete account */}
+          <div style={{
+            background: "rgba(239,68,68,0.05)", backdropFilter: "blur(20px)",
+            border: "1px solid rgba(239,68,68,0.15)", borderRadius: 20, overflow: "hidden",
+          }}>
+            <motion.button whileTap={{ scale: 0.98 }} onClick={() => setDeleting(v => !v)}
+              style={{
+                width: "100%", padding: "18px 20px", background: "none", border: "none",
+                display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer",
+              }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 18 }}>🗑️</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#f87171", fontFamily: "monospace" }}>Konto löschen</span>
+              </div>
+              <span style={{ color: "rgba(239,68,68,0.4)", fontSize: 16 }}>{deleting ? "▲" : "▶"}</span>
+            </motion.button>
+            <AnimatePresence>
+              {deleting && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <div style={{ padding: "0 20px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ fontSize: 11, color: "rgba(239,68,68,0.7)", fontFamily: "monospace", lineHeight: 1.6 }}>
+                      ⚠ Alle deine Daten werden unwiderruflich gelöscht. Tippe LÖSCHEN zur Bestätigung.
+                    </div>
+                    <input placeholder="LÖSCHEN" value={deleteConfirm}
+                      onChange={e => setDeleteConfirm(e.target.value)}
+                      style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                        borderRadius: 10, padding: "12px 14px", color: "#f87171", fontSize: 14,
+                        fontFamily: "monospace", outline: "none" }}
+                    />
+                    <motion.button whileTap={{ scale: 0.97 }}
+                      onClick={handleDelete}
+                      disabled={deleteConfirm !== "LÖSCHEN"}
+                      style={{ padding: "12px", borderRadius: 10, border: "none",
+                        background: deleteConfirm === "LÖSCHEN" ? "linear-gradient(135deg,#dc2626,#ef4444)" : "rgba(239,68,68,0.15)",
+                        color: deleteConfirm === "LÖSCHEN" ? "white" : "rgba(239,68,68,0.4)",
+                        fontSize: 13, fontWeight: 700, cursor: deleteConfirm === "LÖSCHEN" ? "pointer" : "not-allowed",
+                        fontFamily: "monospace" }}>
+                      Konto endgültig löschen
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BOTTOM NAV ────────────────────────────────────────────────────────────────
+function BottomNav({ tab, setTab }) {
+  const tabs = [
+    { id: "calendar", icon: "📅", label: "Kalender" },
+    { id: "stats",    icon: "📊", label: "Stats" },
+    { id: "profile",  icon: "👤", label: "Profil" },
+  ];
+  return (
+    <div style={{
+      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
+      padding: "0 16px",
+      paddingBottom: "env(safe-area-inset-bottom, 16px)",
+    }}>
+      <div style={{
+        maxWidth: 500, margin: "0 auto 12px",
+        background: "rgba(8,12,35,0.85)",
+        backdropFilter: "blur(32px) saturate(1.8)",
+        WebkitBackdropFilter: "blur(32px) saturate(1.8)",
+        border: "1px solid rgba(255,255,255,0.10)",
+        borderRadius: 24,
+        display: "flex",
+        padding: "8px 8px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)",
+      }}>
+        {tabs.map(t => (
+          <motion.button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+              gap: 3, padding: "8px 4px", borderRadius: 16, border: "none", cursor: "pointer",
+              background: tab === t.id ? "rgba(139,92,246,0.18)" : "transparent",
+              transition: "background 0.2s",
+              position: "relative",
+            }}
+          >
+            {tab === t.id && (
+              <motion.div
+                layoutId="tabIndicator"
+                style={{
+                  position: "absolute", inset: 0, borderRadius: 16,
+                  background: "rgba(139,92,246,0.15)",
+                  border: "1px solid rgba(139,92,246,0.3)",
+                  boxShadow: "inset 0 0 12px rgba(139,92,246,0.1)",
+                }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            )}
+            <span style={{ fontSize: 20, position: "relative", zIndex: 1 }}>{t.icon}</span>
+            <span style={{
+              fontSize: 9, fontFamily: "monospace", fontWeight: 600,
+              letterSpacing: "0.05em", position: "relative", zIndex: 1,
+              color: tab === t.id ? "#a78bfa" : "rgba(255,255,255,0.3)",
+              transition: "color 0.2s",
+            }}>{t.label}</span>
+          </motion.button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -734,6 +1322,10 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const [tab, setTab] = useState("calendar");
+  const today = new Date();
+  const [yr, setYr] = useState(today.getFullYear());
+  const [mo, setMo] = useState(today.getMonth());
   const logout = async () => { await supabase.auth.signOut(); setUser(null); };
 
   if (checking) return (
@@ -747,18 +1339,37 @@ export default function App() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Mono:wght@400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #020414; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { background: #020414; height: 100%; overflow-x: hidden; }
+        body { -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
         input[type=number] { -moz-appearance: textfield; }
         ::placeholder { color: rgba(255,255,255,0.22) !important; }
+        @media (max-width: 480px) { #root { padding: 0; } }
       `}</style>
       {!user ? (
         <AuthScreen onAuth={setUser} />
       ) : (
         <PnLProvider user={user}>
-          <Calendar user={user} onLogout={logout} />
+          <AnimatePresence mode="wait">
+            {tab === "calendar" && (
+              <motion.div key="cal" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.18 }}>
+                <Calendar yr={yr} mo={mo} setYr={setYr} setMo={setMo} />
+              </motion.div>
+            )}
+            {tab === "stats" && (
+              <motion.div key="stats" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
+                <StatsTab yr={yr} mo={mo} setYr={setYr} setMo={setMo} />
+              </motion.div>
+            )}
+            {tab === "profile" && (
+              <motion.div key="profile" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
+                <ProfileTab user={user} onLogout={logout} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <BottomNav tab={tab} setTab={setTab} />
         </PnLProvider>
       )}
     </>
