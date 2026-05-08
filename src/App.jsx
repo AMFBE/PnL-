@@ -93,6 +93,9 @@ function PnLProvider({ children, user }) {
           date_key: dateKey,
           pnl: entry.pnl === "" || entry.pnl === null ? null : Number(entry.pnl),
           adherence: entry.adherence === true,
+          note: entry.note ?? null,
+          mood: entry.mood ?? null,
+          chart_url: entry.chart_url ?? null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id,date_key" }
@@ -456,20 +459,40 @@ const CalendarCell = memo(function CalendarCell({ day, month, year, index, onOpe
 });
 
 // ─── INPUT MODAL ──────────────────────────────────────────────────────────────
-function InputModal({ day, month, year, onClose }) {
+const MOODS = [
+  { id: "calm",        emoji: "😌", label: "Ruhig" },
+  { id: "nervous",     emoji: "😰", label: "Nervös" },
+  { id: "overconf",    emoji: "🤑", label: "Overconfident" },
+  { id: "frustrated",  emoji: "😤", label: "Frustriert" },
+  { id: "focused",     emoji: "🎯", label: "Fokussiert" },
+];
+
+function InputModal({ day, month, year, onClose, user }) {
   const { getDay, saveDay } = usePnL();
   const dateKey = toKey(year, month, day);
   const existing = getDay(dateKey);
   const [pnl, setPnl] = useState(existing?.pnl ?? "");
   const [adherence, setAdherence] = useState(existing?.adherence ?? false);
+  const [note, setNote] = useState(existing?.note ?? "");
+  const [mood, setMood] = useState(existing?.mood ?? "");
+  const [chartUrl, setChartUrl] = useState(existing?.chart_url ?? "");
+  const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [tab, setTab] = useState("trade"); // trade | journal
   const hasEntry = existing !== null;
+  const fileRef = useRef(null);
 
   const handleSave = async () => {
     setSaving(true);
-    await saveDay(dateKey, { pnl: pnl === "" ? null : Number(pnl), adherence });
+    await saveDay(dateKey, {
+      pnl: pnl === "" ? null : Number(pnl),
+      adherence,
+      note,
+      mood,
+      chart_url: chartUrl,
+    });
     setSaved(true); setSaving(false);
     setTimeout(onClose, 500);
   };
@@ -480,120 +503,216 @@ function InputModal({ day, month, year, onClose }) {
     onClose();
   };
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/${dateKey}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("chart-images")
+      .upload(path, file, { upsert: true });
+    if (!error) {
+      const { data } = supabase.storage.from("chart-images").getPublicUrl(path);
+      setChartUrl(data.publicUrl);
+    }
+    setUploading(false);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center",
+      style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center",
         background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)" }}
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.88, y: 28, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.88, y: 28, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 380, damping: 28 }}
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 340, damping: 32 }}
         onClick={e => e.stopPropagation()}
         style={{
-          width: 350,
-          background: "rgba(6,10,30,0.88)", backdropFilter: "blur(36px) saturate(1.9)",
-          WebkitBackdropFilter: "blur(36px) saturate(1.9)",
-          border: "1px solid rgba(255,255,255,0.11)", borderRadius: 26,
-          padding: "30px 28px 26px",
-          boxShadow: "0 28px 72px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07)",
-          transform: "translateZ(0)",
+          width: "100%", maxWidth: 500,
+          background: "rgba(6,10,30,0.95)", backdropFilter: "blur(40px) saturate(2)",
+          WebkitBackdropFilter: "blur(40px) saturate(2)",
+          border: "1px solid rgba(255,255,255,0.11)",
+          borderRadius: "26px 26px 0 0",
+          padding: "20px 22px 32px",
+          boxShadow: "0 -12px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)",
+          maxHeight: "90vh", overflowY: "auto",
         }}
       >
-        <div style={{ marginBottom: 26 }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", fontFamily: "monospace", marginBottom: 5 }}>TAGESEINTRAG</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif", letterSpacing: "-0.02em" }}>
+        {/* Handle */}
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)", margin: "0 auto 18px" }} />
+
+        {/* Header */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", fontFamily: "monospace", marginBottom: 4 }}>TAGESEINTRAG</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>
             {day}. {MONTHS[month]} {year}
           </div>
         </div>
 
-        <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 8 }}>TAGES-PNL (€)</div>
-          <input
-            type="number" value={pnl} placeholder="0"
-            onChange={e => setPnl(e.target.value)}
-            style={{
-              width: "100%", boxSizing: "border-box",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.12)", borderRadius: 13,
-              padding: "13px 16px",
-              color: pnl === "" ? "rgba(255,255,255,0.25)" : Number(pnl) >= 0 ? "#34d399" : "#f87171",
-              fontSize: 22, fontWeight: 700, fontFamily: "'DM Mono', monospace", outline: "none",
-              transition: "color 0.2s, border-color 0.2s",
-            }}
-            onFocus={e => e.target.style.borderColor = "rgba(139,92,246,0.55)"}
-            onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
-          />
-        </div>
-
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 12 }}>PLAN-ADHERENCE</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <motion.button
-              onClick={() => setAdherence(v => !v)} whileTap={{ scale: 0.9 }}
-              animate={{ background: adherence ? "linear-gradient(135deg,#059669,#10b981)" : "rgba(255,255,255,0.08)" }}
-              transition={{ type: "spring", stiffness: 500, damping: 24 }}
+        {/* Tab switcher */}
+        <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 3, marginBottom: 20, gap: 3 }}>
+          {[["trade","📈 Trade"],["journal","📝 Tagebuch"]].map(([id, label]) => (
+            <motion.button key={id} onClick={() => setTab(id)} whileTap={{ scale: 0.97 }}
               style={{
-                width: 58, height: 32, borderRadius: 16, border: "none", cursor: "pointer",
-                position: "relative", padding: 0, flexShrink: 0,
-                boxShadow: adherence ? "0 0 18px rgba(16,185,129,0.55), inset 0 1px 0 rgba(255,255,255,0.2)" : "none",
-              }}
-            >
-              <motion.div
-                animate={{ x: adherence ? 28 : 3 }}
-                transition={{ type: "spring", stiffness: 520, damping: 26 }}
-                style={{ position: "absolute", top: 4, width: 24, height: 24, borderRadius: "50%", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
-              />
+                flex: 1, padding: "9px 0", borderRadius: 10, border: "none", cursor: "pointer",
+                background: tab === id ? "rgba(139,92,246,0.25)" : "transparent",
+                color: tab === id ? "#a78bfa" : "rgba(255,255,255,0.35)",
+                fontSize: 12, fontWeight: 700, fontFamily: "monospace",
+                boxShadow: tab === id ? "inset 0 0 8px rgba(139,92,246,0.15)" : "none",
+                transition: "all 0.2s",
+              }}>
+              {label}
             </motion.button>
-            <motion.span
-              animate={{ color: adherence ? "#10b981" : "rgba(255,255,255,0.3)" }}
-              style={{ fontSize: 14, fontWeight: 600, fontFamily: "'DM Mono', monospace" }}
-            >
-              {adherence ? "Plan befolgt ✓" : "Nicht befolgt"}
-            </motion.span>
-          </div>
+          ))}
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        {/* TRADE TAB */}
+        {tab === "trade" && (
+          <>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 8 }}>TAGES-PNL (€)</div>
+              <input type="number" value={pnl} placeholder="0" onChange={e => setPnl(e.target.value)}
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 13, padding: "13px 16px",
+                  color: pnl === "" ? "rgba(255,255,255,0.25)" : Number(pnl) >= 0 ? "#34d399" : "#f87171",
+                  fontSize: 24, fontWeight: 700, fontFamily: "'DM Mono', monospace", outline: "none",
+                  transition: "color 0.2s",
+                }}
+                onFocus={e => e.target.style.borderColor = "rgba(139,92,246,0.55)"}
+                onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+              />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 12 }}>PLAN-ADHERENCE</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <motion.button onClick={() => setAdherence(v => !v)} whileTap={{ scale: 0.9 }}
+                  animate={{ background: adherence ? "linear-gradient(135deg,#059669,#10b981)" : "rgba(255,255,255,0.08)" }}
+                  transition={{ type: "spring", stiffness: 500, damping: 24 }}
+                  style={{ width: 58, height: 32, borderRadius: 16, border: "none", cursor: "pointer",
+                    position: "relative", padding: 0, flexShrink: 0,
+                    boxShadow: adherence ? "0 0 18px rgba(16,185,129,0.55)" : "none" }}>
+                  <motion.div animate={{ x: adherence ? 28 : 3 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 26 }}
+                    style={{ position: "absolute", top: 4, width: 24, height: 24, borderRadius: "50%", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }} />
+                </motion.button>
+                <motion.span animate={{ color: adherence ? "#10b981" : "rgba(255,255,255,0.3)" }}
+                  style={{ fontSize: 14, fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
+                  {adherence ? "Plan befolgt ✓" : "Nicht befolgt"}
+                </motion.span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* JOURNAL TAB */}
+        {tab === "journal" && (
+          <>
+            {/* Mood */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 12 }}>STIMMUNG</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {MOODS.map(m => (
+                  <motion.button key={m.id} onClick={() => setMood(v => v === m.id ? "" : m.id)}
+                    whileTap={{ scale: 0.9 }}
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                      padding: "10px 12px", borderRadius: 14, border: "none", cursor: "pointer",
+                      background: mood === m.id ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.05)",
+                      border: mood === m.id ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: mood === m.id ? "0 0 12px rgba(139,92,246,0.2)" : "none",
+                      transition: "all 0.2s",
+                    }}>
+                    <span style={{ fontSize: 22 }}>{m.emoji}</span>
+                    <span style={{ fontSize: 8, color: mood === m.id ? "#a78bfa" : "rgba(255,255,255,0.3)", fontFamily: "monospace", letterSpacing: "0.05em" }}>{m.label}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Note */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 8 }}>NOTIZEN</div>
+              <textarea value={note} onChange={e => setNote(e.target.value)}
+                placeholder="Was lief gut? Was lief schlecht? Welche Fehler?"
+                rows={4}
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 13, padding: "12px 14px",
+                  color: "white", fontSize: 13, fontFamily: "monospace",
+                  outline: "none", resize: "none", lineHeight: 1.6,
+                }}
+                onFocus={e => e.target.style.borderColor = "rgba(139,92,246,0.5)"}
+                onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.10)"}
+              />
+            </div>
+
+            {/* Chart photo */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 10 }}>CHART FOTO</div>
+              <input type="file" accept="image/*" ref={fileRef} onChange={handlePhotoUpload} style={{ display: "none" }} />
+              {chartUrl ? (
+                <div style={{ position: "relative" }}>
+                  <img src={chartUrl} alt="Chart" style={{ width: "100%", borderRadius: 14, border: "1px solid rgba(255,255,255,0.1)", maxHeight: 180, objectFit: "cover" }} />
+                  <motion.button whileTap={{ scale: 0.9 }} onClick={() => setChartUrl("")}
+                    style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%",
+                      background: "rgba(0,0,0,0.7)", border: "none", color: "white", fontSize: 14, cursor: "pointer" }}>
+                    ✕
+                  </motion.button>
+                </div>
+              ) : (
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    width: "100%", padding: "16px", borderRadius: 14, border: "1px dashed rgba(255,255,255,0.15)",
+                    background: "rgba(255,255,255,0.03)", cursor: "pointer",
+                    color: "rgba(255,255,255,0.3)", fontSize: 13, fontFamily: "monospace",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  }}>
+                  {uploading ? "⏳ Hochladen..." : "📸 Foto hinzufügen"}
+                </motion.button>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
           <button onClick={onClose} style={{
             flex: 1, padding: 13, borderRadius: 13, cursor: "pointer", fontSize: 13, fontWeight: 600,
             background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)",
             color: "rgba(255,255,255,0.45)", fontFamily: "monospace",
           }}>Abbrechen</button>
-          <motion.button
-            onClick={handleSave} disabled={saving} whileTap={{ scale: 0.96 }}
+          <motion.button onClick={handleSave} disabled={saving} whileTap={{ scale: 0.96 }}
             style={{
               flex: 2, padding: 13, borderRadius: 13, border: "none", cursor: saving ? "wait" : "pointer",
-              fontSize: 13, fontWeight: 700, fontFamily: "monospace", letterSpacing: "0.04em",
+              fontSize: 13, fontWeight: 700, fontFamily: "monospace",
               background: saved ? "linear-gradient(135deg,#059669,#10b981)" : "linear-gradient(135deg,#6366f1,#8b5cf6)",
               color: "white",
               boxShadow: saved ? "0 0 22px rgba(16,185,129,0.45)" : "0 0 16px rgba(99,102,241,0.35)",
               transition: "background 0.4s, box-shadow 0.4s",
-            }}
-          >
+            }}>
             {saving ? "Speichern..." : saved ? "✓ Gespeichert" : "Speichern"}
           </motion.button>
         </div>
 
         {hasEntry && (
-          <motion.button
-            onClick={handleDelete}
-            whileTap={{ scale: 0.96 }}
-            animate={{
-              background: confirmDelete ? "rgba(239,68,68,0.2)" : "transparent",
-              borderColor: confirmDelete ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.07)",
-            }}
+          <motion.button onClick={handleDelete} whileTap={{ scale: 0.96 }}
+            animate={{ background: confirmDelete ? "rgba(239,68,68,0.2)" : "transparent" }}
             style={{
               width: "100%", marginTop: 8, padding: "11px", borderRadius: 13,
-              border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer",
-              fontSize: 12, fontWeight: 600, fontFamily: "monospace",
+              border: `1px solid ${confirmDelete ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.07)"}`,
+              cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "monospace",
               color: confirmDelete ? "#f87171" : "rgba(255,255,255,0.25)",
-              transition: "color 0.2s",
-            }}
-          >
+            }}>
             {confirmDelete ? "⚠ Nochmal tippen zum Bestätigen" : "🗑 Eintrag löschen"}
           </motion.button>
         )}
@@ -603,7 +722,7 @@ function InputModal({ day, month, year, onClose }) {
 }
 
 // ─── MAIN CALENDAR ─────────────────────────────────────────────────────────────
-function Calendar({ yr, mo, setYr, setMo }) {
+function Calendar({ yr, mo, setYr, setMo, user }) {
   const { data, loading, saveError } = usePnL();
   const [modalDay, setModalDay] = useState(null);
   const [navDir, setNavDir] = useState(1);
@@ -752,7 +871,7 @@ function Calendar({ yr, mo, setYr, setMo }) {
 
       <AnimatePresence>
         {modalDay !== null && (
-          <InputModal day={modalDay} month={mo} year={yr} onClose={() => setModalDay(null)} />
+          <InputModal day={modalDay} month={mo} year={yr} onClose={() => setModalDay(null)} user={user} />
         )}
       </AnimatePresence>
 
@@ -1247,6 +1366,7 @@ function BottomNav({ tab, setTab }) {
   const tabs = [
     { id: "calendar", icon: "📅", label: "Kalender" },
     { id: "stats",    icon: "📊", label: "Stats" },
+    { id: "regeln",   icon: "📋", label: "Regeln" },
     { id: "profile",  icon: "👤", label: "Profil" },
   ];
   return (
@@ -1305,6 +1425,277 @@ function BottomNav({ tab, setTab }) {
   );
 }
 
+
+// ─── REGELWERK TAB ────────────────────────────────────────────────────────────
+function RegelnTab({ user }) {
+  const today = new Date();
+  const todayKey = toKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const [rules, setRules] = useState([]);
+  const [checklist, setChecklist] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [newRuleTitle, setNewRuleTitle] = useState("");
+  const [newRuleDesc, setNewRuleDesc] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+
+  // Load rules + today checklist
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([
+      supabase.from("trading_rules").select("*").eq("user_id", user.id).eq("is_active", true).order("created_at"),
+      supabase.from("daily_checklist").select("*").eq("user_id", user.id).eq("date_key", todayKey),
+    ]).then(([{ data: rulesData }, { data: checkData }]) => {
+      setRules(rulesData || []);
+      const map = {};
+      (checkData || []).forEach(c => { map[c.rule_id] = c.checked; });
+      setChecklist(map);
+      setLoading(false);
+    });
+  }, [user]);
+
+  // Weekly score: last 7 days
+  const [weekScore, setWeekScore] = useState(null);
+  useEffect(() => {
+    if (!user || rules.length === 0) return;
+    const keys = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      keys.push(toKey(d.getFullYear(), d.getMonth(), d.getDate()));
+    }
+    supabase.from("daily_checklist")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("date_key", keys)
+      .then(({ data }) => {
+        if (!data || data.length === 0) { setWeekScore(0); return; }
+        const checked = data.filter(c => c.checked).length;
+        const total = rules.length * 7;
+        setWeekScore(total > 0 ? Math.round((checked / total) * 100) : 0);
+      });
+  }, [user, rules]);
+
+  const toggleCheck = async (ruleId) => {
+    const newVal = !checklist[ruleId];
+    setChecklist(prev => ({ ...prev, [ruleId]: newVal }));
+    await supabase.from("daily_checklist").upsert({
+      user_id: user.id,
+      date_key: todayKey,
+      rule_id: ruleId,
+      checked: newVal,
+    }, { onConflict: "user_id,date_key,rule_id" });
+  };
+
+  const addRule = async () => {
+    if (!newRuleTitle.trim()) return;
+    setAdding(true);
+    const { data, error } = await supabase.from("trading_rules").insert({
+      user_id: user.id,
+      title: newRuleTitle.trim(),
+      description: newRuleDesc.trim() || null,
+    }).select().single();
+    if (!error && data) {
+      setRules(prev => [...prev, data]);
+      setNewRuleTitle(""); setNewRuleDesc(""); setShowAdd(false);
+    }
+    setAdding(false);
+  };
+
+  const deleteRule = async (id) => {
+    await supabase.from("trading_rules").update({ is_active: false }).eq("id", id);
+    setRules(prev => prev.filter(r => r.id !== id));
+  };
+
+  const checkedToday = rules.filter(r => checklist[r.id]).length;
+  const totalRules = rules.length;
+  const todayPct = totalRules > 0 ? Math.round((checkedToday / totalRules) * 100) : 0;
+
+  const dayNames = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+
+  return (
+    <div style={{ minHeight: "100vh", position: "relative" }}>
+      <MeshBackground />
+      <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top,20px) 14px 100px" }}>
+
+        {/* Header */}
+        <div style={{ paddingTop: 16, marginBottom: 20 }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>DISZIPLIN</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>Regelwerk</div>
+        </div>
+
+        {/* Weekly score */}
+        <div style={{
+          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
+          padding: "18px 18px 16px", marginBottom: 14,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace" }}>7-TAGE DISZIPLIN-SCORE</div>
+            <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "monospace",
+              color: weekScore >= 80 ? "#34d399" : weekScore >= 50 ? "#fbbf24" : "#f87171" }}>
+              {weekScore !== null ? `${weekScore}%` : "—"}
+            </span>
+          </div>
+          <div style={{ height: 8, background: "rgba(255,255,255,0.07)", borderRadius: 99, overflow: "hidden" }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${weekScore || 0}%` }}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+              style={{
+                height: "100%", borderRadius: 99,
+                background: weekScore >= 80
+                  ? "linear-gradient(90deg,#059669,#34d399)"
+                  : weekScore >= 50
+                  ? "linear-gradient(90deg,#d97706,#fbbf24)"
+                  : "linear-gradient(90deg,#dc2626,#f87171)",
+                boxShadow: weekScore >= 80 ? "0 0 8px rgba(52,211,153,0.5)" : "none",
+              }}
+            />
+          </div>
+          {/* Day dots */}
+          <div style={{ display: "flex", gap: 6, marginTop: 10, justifyContent: "space-between" }}>
+            {Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(); d.setDate(d.getDate() - (6 - i));
+              const isToday = i === 6;
+              return (
+                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%",
+                    background: isToday ? "#a78bfa" : "rgba(255,255,255,0.12)",
+                    boxShadow: isToday ? "0 0 6px rgba(167,139,250,0.6)" : "none" }} />
+                  <span style={{ fontSize: 7, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>
+                    {dayNames[d.getDay()]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Today checklist */}
+        <div style={{
+          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
+          padding: "18px 18px 14px", marginBottom: 14,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace" }}>HEUTE CHECKLISTE</div>
+            <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700,
+              color: todayPct === 100 ? "#34d399" : "rgba(255,255,255,0.4)" }}>
+              {checkedToday}/{totalRules}
+              {todayPct === 100 && " 🎯"}
+            </span>
+          </div>
+
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "20px 0", color: "rgba(255,255,255,0.2)", fontFamily: "monospace", fontSize: 12 }}>Laden...</div>
+          ) : rules.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "20px 0", color: "rgba(255,255,255,0.2)", fontFamily: "monospace", fontSize: 12 }}>
+              Noch keine Regeln. Füge deine erste Regel hinzu ↓
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {rules.map((rule, i) => {
+                const isChecked = !!checklist[rule.id];
+                return (
+                  <motion.div key={rule.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    style={{ display: "flex", alignItems: "center", gap: 12,
+                      padding: "12px 14px", borderRadius: 14,
+                      background: isChecked ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${isChecked ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.07)"}`,
+                      transition: "all 0.25s",
+                    }}>
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => toggleCheck(rule.id)}
+                      style={{
+                        width: 26, height: 26, borderRadius: 8, border: "none", cursor: "pointer", flexShrink: 0,
+                        background: isChecked ? "linear-gradient(135deg,#059669,#10b981)" : "rgba(255,255,255,0.08)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: isChecked ? "0 0 10px rgba(16,185,129,0.4)" : "none",
+                        fontSize: 13, transition: "all 0.2s",
+                      }}>
+                      {isChecked ? "✓" : ""}
+                    </motion.button>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: isChecked ? "rgba(255,255,255,0.7)" : "white",
+                        fontFamily: "monospace", textDecoration: isChecked ? "line-through" : "none",
+                        transition: "all 0.2s" }}>{rule.title}</div>
+                      {rule.description && (
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2, fontFamily: "monospace" }}>{rule.description}</div>
+                      )}
+                    </div>
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => deleteRule(rule.id)}
+                      style={{ background: "none", border: "none", cursor: "pointer",
+                        color: "rgba(255,255,255,0.15)", fontSize: 14, padding: "4px" }}>
+                      ✕
+                    </motion.button>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Add rule */}
+        <div style={{
+          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
+          overflow: "hidden",
+        }}>
+          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setShowAdd(v => !v)}
+            style={{
+              width: "100%", padding: "16px 18px", background: "none", border: "none",
+              display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
+            }}>
+            <span style={{ fontSize: 18 }}>➕</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>Neue Regel hinzufügen</span>
+            <span style={{ marginLeft: "auto", color: "rgba(255,255,255,0.3)", fontSize: 14 }}>{showAdd ? "▲" : "▶"}</span>
+          </motion.button>
+          <AnimatePresence>
+            {showAdd && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}
+              >
+                <div style={{ padding: "0 18px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+                  <input
+                    placeholder="Regelname (z.B. Max 2 Trades pro Tag)"
+                    value={newRuleTitle} onChange={e => setNewRuleTitle(e.target.value)}
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 10, padding: "12px 14px", color: "white", fontSize: 13,
+                      fontFamily: "monospace", outline: "none", boxSizing: "border-box", width: "100%" }}
+                    onFocus={e => e.target.style.borderColor = "rgba(139,92,246,0.5)"}
+                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+                  />
+                  <input
+                    placeholder="Beschreibung (optional)"
+                    value={newRuleDesc} onChange={e => setNewRuleDesc(e.target.value)}
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 10, padding: "11px 14px", color: "white", fontSize: 12,
+                      fontFamily: "monospace", outline: "none", boxSizing: "border-box", width: "100%" }}
+                    onFocus={e => e.target.style.borderColor = "rgba(139,92,246,0.5)"}
+                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+                  />
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={addRule} disabled={adding || !newRuleTitle.trim()}
+                    style={{
+                      padding: "12px", borderRadius: 10, border: "none",
+                      background: newRuleTitle.trim() ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.05)",
+                      color: newRuleTitle.trim() ? "white" : "rgba(255,255,255,0.2)",
+                      fontSize: 13, fontWeight: 700, cursor: newRuleTitle.trim() ? "pointer" : "not-allowed",
+                      fontFamily: "monospace", transition: "all 0.2s",
+                    }}>
+                    {adding ? "Speichern..." : "Regel speichern"}
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
@@ -1355,12 +1746,17 @@ export default function App() {
           <AnimatePresence mode="wait">
             {tab === "calendar" && (
               <motion.div key="cal" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.18 }}>
-                <Calendar yr={yr} mo={mo} setYr={setYr} setMo={setMo} />
+                <Calendar yr={yr} mo={mo} setYr={setYr} setMo={setMo} user={user} />
               </motion.div>
             )}
             {tab === "stats" && (
               <motion.div key="stats" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
                 <StatsTab yr={yr} mo={mo} setYr={setYr} setMo={setMo} />
+              </motion.div>
+            )}
+            {tab === "regeln" && (
+              <motion.div key="regeln" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
+                <RegelnTab user={user} />
               </motion.div>
             )}
             {tab === "profile" && (
