@@ -16,6 +16,235 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+
+// ─── I18N ─────────────────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  de: {
+    appTitle: "TRADING JOURNAL", calendar: "Kalender", stats: "Stats",
+    propfirm: "Prop Firm", profile: "Profil",
+    monthlyPnL: "Monats-PnL", discipline: "Disziplin",
+    winDays: "Win-Tage", lossDays: "Loss-Tage", avgDay: "Ø Tag",
+    bestDay: "Bester Tag", worstDay: "Schlechtester Tag",
+    monthlyTarget: "MONATSZIEL", change: "ÄNDERN", set: "SETZEN",
+    targetReached: "🎯 Ziel erreicht!", noTarget: "Kein Ziel gesetzt",
+    dailyPnL: "TÄGLICHER PNL", cumulativeGain: "KUMULATIVER GEWINN",
+    winRate: "WIN RATE", streakRecord: "STREAK REKORD", days: "Tage",
+    statistics: "Statistiken", tradeEntry: "TAGESEINTRAG",
+    tradePnL: "TAGES-PNL (€)", planAdherence: "PLAN-ADHERENCE",
+    planFollowed: "Plan befolgt ✓", notFollowed: "Nicht befolgt",
+    mood: "STIMMUNG", notes: "NOTIZEN",
+    notesPlaceholder: "Was lief gut? Was lief schlecht? Welche Fehler?",
+    cancel: "Abbrechen", save: "Speichern", saving: "Speichern...", saved: "✓ Gespeichert",
+    deleteEntry: "🗑 Eintrag löschen", confirmDelete: "⚠ Nochmal tippen zum Bestätigen",
+    trade: "📈 Trade", journal: "📝 Tagebuch",
+    account: "KONTO", profileTitle: "Profil", passwordChange: "Passwort ändern",
+    logout: "Ausloggen", deleteAccount: "Konto löschen",
+    deleteWarning: "⚠ Alle deine Daten werden unwiderruflich gelöscht. Tippe LÖSCHEN zur Bestätigung.",
+    deleteConfirmWord: "LÖSCHEN", deleteBtn: "Konto endgültig löschen",
+    language: "Sprache", newPassword: "Neues Passwort",
+    propFirmTitle: "Prop Firm", accounts: "KONTEN", addAccount: "Konto hinzufügen",
+    balance: "Kontostand", drawdown: "Max Drawdown", dailyLimit: "Tages-Limit",
+    profitTarget: "Profit Ziel", startBalance: "Startkapital",
+    drawdownUsed: "Drawdown genutzt", targetProgress: "Ziel Fortschritt",
+    danger: "⚠ Gefährlich nah am Limit!", passed: "✅ Ziel erreicht!",
+    active: "Aktiv", inactive: "Inaktiv", noAccounts: "Noch keine Konten. Konto hinzufügen ↓",
+    firmName: "Firmenname", accountSize: "Kontogröße (€)", maxDrawdown: "Max Drawdown (€)",
+    dailyLossLimit: "Tages-Verlust-Limit (€)", profitTargetField: "Profit Ziel (€)",
+    currentBalance: "Aktueller Stand (€)", editAccount: "Konto bearbeiten", deleteAcct: "Konto löschen",
+    moodCalm: "Ruhig", moodNervous: "Nervös", moodOverconf: "Overconfident",
+    moodFrustrated: "Frustriert", moodFocused: "Fokussiert",
+  },
+  en: {
+    appTitle: "TRADING JOURNAL", calendar: "Calendar", stats: "Stats",
+    propfirm: "Prop Firm", profile: "Profile",
+    monthlyPnL: "Monthly PnL", discipline: "Discipline",
+    winDays: "Win Days", lossDays: "Loss Days", avgDay: "Avg Day",
+    bestDay: "Best Day", worstDay: "Worst Day",
+    monthlyTarget: "MONTHLY TARGET", change: "CHANGE", set: "SET",
+    targetReached: "🎯 Target reached!", noTarget: "No target set",
+    dailyPnL: "DAILY PNL", cumulativeGain: "CUMULATIVE GAIN",
+    winRate: "WIN RATE", streakRecord: "STREAK RECORD", days: "days",
+    statistics: "Statistics", tradeEntry: "DAILY ENTRY",
+    tradePnL: "DAILY PNL (€)", planAdherence: "PLAN ADHERENCE",
+    planFollowed: "Plan followed ✓", notFollowed: "Not followed",
+    mood: "MOOD", notes: "NOTES",
+    notesPlaceholder: "What went well? What went wrong? What mistakes?",
+    cancel: "Cancel", save: "Save", saving: "Saving...", saved: "✓ Saved",
+    deleteEntry: "🗑 Delete entry", confirmDelete: "⚠ Tap again to confirm",
+    trade: "📈 Trade", journal: "📝 Journal",
+    account: "ACCOUNT", profileTitle: "Profile", passwordChange: "Change password",
+    logout: "Logout", deleteAccount: "Delete account",
+    deleteWarning: "⚠ All your data will be permanently deleted. Type DELETE to confirm.",
+    deleteConfirmWord: "DELETE", deleteBtn: "Permanently delete account",
+    language: "Language", newPassword: "New password",
+    propFirmTitle: "Prop Firm", accounts: "ACCOUNTS", addAccount: "Add account",
+    balance: "Balance", drawdown: "Max Drawdown", dailyLimit: "Daily Limit",
+    profitTarget: "Profit Target", startBalance: "Starting Balance",
+    drawdownUsed: "Drawdown used", targetProgress: "Target progress",
+    danger: "⚠ Dangerously close to limit!", passed: "✅ Target reached!",
+    active: "Active", inactive: "Inactive", noAccounts: "No accounts yet. Add one below ↓",
+    firmName: "Firm name", accountSize: "Account size (€)", maxDrawdown: "Max drawdown (€)",
+    dailyLossLimit: "Daily loss limit (€)", profitTargetField: "Profit target (€)",
+    currentBalance: "Current balance (€)", editAccount: "Edit account", deleteAcct: "Delete account",
+    moodCalm: "Calm", moodNervous: "Nervous", moodOverconf: "Overconfident",
+    moodFrustrated: "Frustrated", moodFocused: "Focused",
+  },
+  fr: {
+    appTitle: "JOURNAL DE TRADING", calendar: "Calendrier", stats: "Stats",
+    propfirm: "Prop Firm", profile: "Profil",
+    monthlyPnL: "PnL Mensuel", discipline: "Discipline",
+    winDays: "Jours Gagnants", lossDays: "Jours Perdants", avgDay: "Moy. Jour",
+    bestDay: "Meilleur Jour", worstDay: "Pire Jour",
+    monthlyTarget: "OBJECTIF MENSUEL", change: "MODIFIER", set: "DÉFINIR",
+    targetReached: "🎯 Objectif atteint!", noTarget: "Aucun objectif",
+    dailyPnL: "PNL JOURNALIER", cumulativeGain: "GAIN CUMULATIF",
+    winRate: "TAUX DE RÉUSSITE", streakRecord: "RECORD DE SÉRIE", days: "jours",
+    statistics: "Statistiques", tradeEntry: "ENTRÉE DU JOUR",
+    tradePnL: "PNL DU JOUR (€)", planAdherence: "RESPECT DU PLAN",
+    planFollowed: "Plan respecté ✓", notFollowed: "Non respecté",
+    mood: "HUMEUR", notes: "NOTES",
+    notesPlaceholder: "Qu'est-ce qui s'est bien passé? Mal passé? Erreurs?",
+    cancel: "Annuler", save: "Enregistrer", saving: "Enregistrement...", saved: "✓ Enregistré",
+    deleteEntry: "🗑 Supprimer l'entrée", confirmDelete: "⚠ Appuyer à nouveau pour confirmer",
+    trade: "📈 Trade", journal: "📝 Journal",
+    account: "COMPTE", profileTitle: "Profil", passwordChange: "Changer le mot de passe",
+    logout: "Déconnexion", deleteAccount: "Supprimer le compte",
+    deleteWarning: "⚠ Toutes vos données seront supprimées. Tapez SUPPRIMER pour confirmer.",
+    deleteConfirmWord: "SUPPRIMER", deleteBtn: "Supprimer définitivement",
+    language: "Langue", newPassword: "Nouveau mot de passe",
+    propFirmTitle: "Prop Firm", accounts: "COMPTES", addAccount: "Ajouter un compte",
+    balance: "Solde", drawdown: "Drawdown Max", dailyLimit: "Limite Journalière",
+    profitTarget: "Objectif Profit", startBalance: "Capital de départ",
+    drawdownUsed: "Drawdown utilisé", targetProgress: "Progression objectif",
+    danger: "⚠ Dangereusement proche de la limite!", passed: "✅ Objectif atteint!",
+    active: "Actif", inactive: "Inactif", noAccounts: "Aucun compte. Ajoutez-en un ↓",
+    firmName: "Nom de la firme", accountSize: "Taille du compte (€)", maxDrawdown: "Drawdown max (€)",
+    dailyLossLimit: "Limite de perte journalière (€)", profitTargetField: "Objectif de profit (€)",
+    currentBalance: "Solde actuel (€)", editAccount: "Modifier", deleteAcct: "Supprimer",
+    moodCalm: "Calme", moodNervous: "Nerveux", moodOverconf: "Surconfiant",
+    moodFrustrated: "Frustré", moodFocused: "Concentré",
+  },
+  es: {
+    appTitle: "DIARIO DE TRADING", calendar: "Calendario", stats: "Stats",
+    propfirm: "Prop Firm", profile: "Perfil",
+    monthlyPnL: "PnL Mensual", discipline: "Disciplina",
+    winDays: "Días Ganadores", lossDays: "Días Perdedores", avgDay: "Prom. Día",
+    bestDay: "Mejor Día", worstDay: "Peor Día",
+    monthlyTarget: "META MENSUAL", change: "CAMBIAR", set: "FIJAR",
+    targetReached: "🎯 ¡Meta alcanzada!", noTarget: "Sin meta",
+    dailyPnL: "PNL DIARIO", cumulativeGain: "GANANCIA ACUMULADA",
+    winRate: "TASA DE ÉXITO", streakRecord: "RACHA RÉCORD", days: "días",
+    statistics: "Estadísticas", tradeEntry: "ENTRADA DEL DÍA",
+    tradePnL: "PNL DEL DÍA (€)", planAdherence: "ADHERENCIA AL PLAN",
+    planFollowed: "Plan seguido ✓", notFollowed: "No seguido",
+    mood: "ESTADO DE ÁNIMO", notes: "NOTAS",
+    notesPlaceholder: "¿Qué salió bien? ¿Qué salió mal? ¿Qué errores?",
+    cancel: "Cancelar", save: "Guardar", saving: "Guardando...", saved: "✓ Guardado",
+    deleteEntry: "🗑 Eliminar entrada", confirmDelete: "⚠ Toca de nuevo para confirmar",
+    trade: "📈 Trade", journal: "📝 Diario",
+    account: "CUENTA", profileTitle: "Perfil", passwordChange: "Cambiar contraseña",
+    logout: "Cerrar sesión", deleteAccount: "Eliminar cuenta",
+    deleteWarning: "⚠ Todos tus datos serán eliminados. Escribe ELIMINAR para confirmar.",
+    deleteConfirmWord: "ELIMINAR", deleteBtn: "Eliminar cuenta permanentemente",
+    language: "Idioma", newPassword: "Nueva contraseña",
+    propFirmTitle: "Prop Firm", accounts: "CUENTAS", addAccount: "Agregar cuenta",
+    balance: "Saldo", drawdown: "Drawdown Máx", dailyLimit: "Límite Diario",
+    profitTarget: "Meta de Ganancia", startBalance: "Capital inicial",
+    drawdownUsed: "Drawdown usado", targetProgress: "Progreso meta",
+    danger: "⚠ ¡Peligrosamente cerca del límite!", passed: "✅ ¡Meta alcanzada!",
+    active: "Activo", inactive: "Inactivo", noAccounts: "Sin cuentas. Agrega una ↓",
+    firmName: "Nombre de la firma", accountSize: "Tamaño de cuenta (€)", maxDrawdown: "Drawdown máx (€)",
+    dailyLossLimit: "Límite pérdida diaria (€)", profitTargetField: "Meta de ganancia (€)",
+    currentBalance: "Saldo actual (€)", editAccount: "Editar", deleteAcct: "Eliminar",
+    moodCalm: "Tranquilo", moodNervous: "Nervioso", moodOverconf: "Sobreconfiado",
+    moodFrustrated: "Frustrado", moodFocused: "Concentrado",
+  },
+  hi: {
+    appTitle: "ट्रेडिंग जर्नल", calendar: "कैलेंडर", stats: "आँकड़े",
+    propfirm: "प्रॉप फर्म", profile: "प्रोफ़ाइल",
+    monthlyPnL: "मासिक PnL", discipline: "अनुशासन",
+    winDays: "जीत के दिन", lossDays: "हार के दिन", avgDay: "औसत दिन",
+    bestDay: "सबसे अच्छा दिन", worstDay: "सबसे बुरा दिन",
+    monthlyTarget: "मासिक लक्ष्य", change: "बदलें", set: "सेट करें",
+    targetReached: "🎯 लक्ष्य हासिल!", noTarget: "कोई लक्ष्य नहीं",
+    dailyPnL: "दैनिक PNL", cumulativeGain: "संचित लाभ",
+    winRate: "जीत दर", streakRecord: "सर्वश्रेष्ठ स्ट्रीक", days: "दिन",
+    statistics: "आँकड़े", tradeEntry: "दैनिक प्रविष्टि",
+    tradePnL: "दैनिक PNL (€)", planAdherence: "योजना पालन",
+    planFollowed: "योजना का पालन ✓", notFollowed: "पालन नहीं किया",
+    mood: "मनोदशा", notes: "नोट्स",
+    notesPlaceholder: "क्या अच्छा रहा? क्या बुरा? क्या गलतियाँ?",
+    cancel: "रद्द करें", save: "सहेजें", saving: "सहेज रहे हैं...", saved: "✓ सहेजा गया",
+    deleteEntry: "🗑 प्रविष्टि हटाएं", confirmDelete: "⚠ पुष्टि के लिए फिर से टैप करें",
+    trade: "📈 ट्रेड", journal: "📝 जर्नल",
+    account: "खाता", profileTitle: "प्रोफ़ाइल", passwordChange: "पासवर्ड बदलें",
+    logout: "लॉग आउट", deleteAccount: "खाता हटाएं",
+    deleteWarning: "⚠ सभी डेटा स्थायी रूप से हटा दिए जाएंगे। DELETE टाइप करें।",
+    deleteConfirmWord: "DELETE", deleteBtn: "खाता स्थायी रूप से हटाएं",
+    language: "भाषा", newPassword: "नया पासवर्ड",
+    propFirmTitle: "प्रॉप फर्म", accounts: "खाते", addAccount: "खाता जोड़ें",
+    balance: "शेष राशि", drawdown: "अधिकतम ड्रॉडाउन", dailyLimit: "दैनिक सीमा",
+    profitTarget: "लाभ लक्ष्य", startBalance: "प्रारंभिक पूंजी",
+    drawdownUsed: "उपयोग किया ड्रॉडाउन", targetProgress: "लक्ष्य प्रगति",
+    danger: "⚠ सीमा के खतरनाक रूप से करीब!", passed: "✅ लक्ष्य हासिल!",
+    active: "सक्रिय", inactive: "निष्क्रिय", noAccounts: "कोई खाता नहीं। नीचे जोड़ें ↓",
+    firmName: "फर्म का नाम", accountSize: "खाता आकार (€)", maxDrawdown: "अधिकतम ड्रॉडाउन (€)",
+    dailyLossLimit: "दैनिक हानि सीमा (€)", profitTargetField: "लाभ लक्ष्य (€)",
+    currentBalance: "वर्तमान शेष (€)", editAccount: "संपादित करें", deleteAcct: "हटाएं",
+    moodCalm: "शांत", moodNervous: "घबराया हुआ", moodOverconf: "अति आत्मविश्वास",
+    moodFrustrated: "निराश", moodFocused: "केंद्रित",
+  },
+  pt: {
+    appTitle: "DIÁRIO DE TRADING", calendar: "Calendário", stats: "Estatísticas",
+    propfirm: "Prop Firm", profile: "Perfil",
+    monthlyPnL: "PnL Mensal", discipline: "Disciplina",
+    winDays: "Dias Vencedores", lossDays: "Dias Perdedores", avgDay: "Média Dia",
+    bestDay: "Melhor Dia", worstDay: "Pior Dia",
+    monthlyTarget: "META MENSAL", change: "ALTERAR", set: "DEFINIR",
+    targetReached: "🎯 Meta atingida!", noTarget: "Sem meta definida",
+    dailyPnL: "PNL DIÁRIO", cumulativeGain: "GANHO ACUMULADO",
+    winRate: "TAXA DE ACERTO", streakRecord: "RECORDE DE SEQUÊNCIA", days: "dias",
+    statistics: "Estatísticas", tradeEntry: "ENTRADA DO DIA",
+    tradePnL: "PNL DO DIA (€)", planAdherence: "ADESÃO AO PLANO",
+    planFollowed: "Plano seguido ✓", notFollowed: "Não seguido",
+    mood: "HUMOR", notes: "NOTAS",
+    notesPlaceholder: "O que correu bem? Mal? Quais erros?",
+    cancel: "Cancelar", save: "Salvar", saving: "Salvando...", saved: "✓ Salvo",
+    deleteEntry: "🗑 Excluir entrada", confirmDelete: "⚠ Toque novamente para confirmar",
+    trade: "📈 Trade", journal: "📝 Diário",
+    account: "CONTA", profileTitle: "Perfil", passwordChange: "Alterar senha",
+    logout: "Sair", deleteAccount: "Excluir conta",
+    deleteWarning: "⚠ Todos os seus dados serão excluídos. Digite EXCLUIR para confirmar.",
+    deleteConfirmWord: "EXCLUIR", deleteBtn: "Excluir conta permanentemente",
+    language: "Idioma", newPassword: "Nova senha",
+    propFirmTitle: "Prop Firm", accounts: "CONTAS", addAccount: "Adicionar conta",
+    balance: "Saldo", drawdown: "Drawdown Máx", dailyLimit: "Limite Diário",
+    profitTarget: "Meta de Lucro", startBalance: "Capital inicial",
+    drawdownUsed: "Drawdown usado", targetProgress: "Progresso da meta",
+    danger: "⚠ Perigosamente perto do limite!", passed: "✅ Meta atingida!",
+    active: "Ativo", inactive: "Inativo", noAccounts: "Sem contas. Adicione uma ↓",
+    firmName: "Nome da firma", accountSize: "Tamanho da conta (€)", maxDrawdown: "Drawdown máx (€)",
+    dailyLossLimit: "Limite de perda diária (€)", profitTargetField: "Meta de lucro (€)",
+    currentBalance: "Saldo atual (€)", editAccount: "Editar", deleteAcct: "Excluir",
+    moodCalm: "Calmo", moodNervous: "Nervoso", moodOverconf: "Confiante demais",
+    moodFrustrated: "Frustrado", moodFocused: "Focado",
+  },
+};
+
+const LangContext = createContext(null);
+function LangProvider({ children }) {
+  const [lang, setLang] = useState(() => {
+    try { return localStorage.getItem("pnl_lang") || "de"; } catch { return "de"; }
+  });
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.de;
+  const changeLang = (l) => {
+    setLang(l);
+    try { localStorage.setItem("pnl_lang", l); } catch {}
+  };
+  return <LangContext.Provider value={{ lang, t, changeLang }}>{children}</LangContext.Provider>;
+}
+function useLang() { return useContext(LangContext); }
+
 // ─── PNL CONTEXT ──────────────────────────────────────────────────────────────
 const PnLContext = createContext(null);
 
@@ -467,32 +696,24 @@ const MOODS = [
   { id: "focused",     emoji: "🎯", label: "Fokussiert" },
 ];
 
-function InputModal({ day, month, year, onClose, user }) {
+function InputModal({ day, month, year, onClose }) {
   const { getDay, saveDay } = usePnL();
+  const { t } = useLang();
   const dateKey = toKey(year, month, day);
   const existing = getDay(dateKey);
   const [pnl, setPnl] = useState(existing?.pnl ?? "");
   const [adherence, setAdherence] = useState(existing?.adherence ?? false);
   const [note, setNote] = useState(existing?.note ?? "");
   const [mood, setMood] = useState(existing?.mood ?? "");
-  const [chartUrl, setChartUrl] = useState(existing?.chart_url ?? "");
-  const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [tab, setTab] = useState("trade"); // trade | journal
+  const [modalTab, setModalTab] = useState("trade");
   const hasEntry = existing !== null;
-  const fileRef = useRef(null);
 
   const handleSave = async () => {
     setSaving(true);
-    await saveDay(dateKey, {
-      pnl: pnl === "" ? null : Number(pnl),
-      adherence,
-      note,
-      mood,
-      chart_url: chartUrl,
-    });
+    await saveDay(dateKey, { pnl: pnl === "" ? null : Number(pnl), adherence, note, mood });
     setSaved(true); setSaving(false);
     setTimeout(onClose, 500);
   };
@@ -501,22 +722,6 @@ function InputModal({ day, month, year, onClose, user }) {
     if (!confirmDelete) { setConfirmDelete(true); return; }
     await saveDay(dateKey, null);
     onClose();
-  };
-
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !user) return;
-    setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/${dateKey}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage
-      .from("chart-images")
-      .upload(path, file, { upsert: true });
-    if (!error) {
-      const { data } = supabase.storage.from("chart-images").getPublicUrl(path);
-      setChartUrl(data.publicUrl);
-    }
-    setUploading(false);
   };
 
   return (
@@ -534,17 +739,20 @@ function InputModal({ day, month, year, onClose, user }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 500,
-          background: "rgba(6,10,30,0.95)", backdropFilter: "blur(40px) saturate(2)",
+          background: "rgba(6,10,30,0.97)", backdropFilter: "blur(40px) saturate(2)",
           WebkitBackdropFilter: "blur(40px) saturate(2)",
           border: "1px solid rgba(255,255,255,0.11)",
           borderRadius: "26px 26px 0 0",
-          padding: "20px 22px 32px",
+          padding: "16px 20px max(env(safe-area-inset-bottom, 24px), 24px)",
           boxShadow: "0 -12px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)",
-          maxHeight: "90vh", overflowY: "auto",
+          maxHeight: "92vh", overflowY: "scroll",
+          WebkitOverflowScrolling: "touch",
         }}
       >
-        {/* Handle */}
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)", margin: "0 auto 18px" }} />
+        {/* Drag indicator */}
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)",
+          margin: "0 auto 14px", cursor: "grab" }} />
+
 
         {/* Header */}
         <div style={{ marginBottom: 18 }}>
@@ -556,8 +764,8 @@ function InputModal({ day, month, year, onClose, user }) {
 
         {/* Tab switcher */}
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 3, marginBottom: 20, gap: 3 }}>
-          {[["trade","📈 Trade"],["journal","📝 Tagebuch"]].map(([id, label]) => (
-            <motion.button key={id} onClick={() => setTab(id)} whileTap={{ scale: 0.97 }}
+          {[["trade", t.trade],["journal", t.journal]].map(([id, label]) => (
+            <motion.button key={id} onClick={() => setModalTab(id)} whileTap={{ scale: 0.97 }}
               style={{
                 flex: 1, padding: "9px 0", borderRadius: 10, border: "none", cursor: "pointer",
                 background: tab === id ? "rgba(139,92,246,0.25)" : "transparent",
@@ -572,7 +780,7 @@ function InputModal({ day, month, year, onClose, user }) {
         </div>
 
         {/* TRADE TAB */}
-        {tab === "trade" && (
+        {modalTab === "trade" && (
           <>
             <div style={{ marginBottom: 18 }}>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 8 }}>TAGES-PNL (€)</div>
@@ -613,7 +821,7 @@ function InputModal({ day, month, year, onClose, user }) {
         )}
 
         {/* JOURNAL TAB */}
-        {tab === "journal" && (
+        {modalTab === "journal" && (
           <>
             {/* Mood */}
             <div style={{ marginBottom: 20 }}>
@@ -655,32 +863,7 @@ function InputModal({ day, month, year, onClose, user }) {
               />
             </div>
 
-            {/* Chart photo */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 10 }}>CHART FOTO</div>
-              <input type="file" accept="image/*" ref={fileRef} onChange={handlePhotoUpload} style={{ display: "none" }} />
-              {chartUrl ? (
-                <div style={{ position: "relative" }}>
-                  <img src={chartUrl} alt="Chart" style={{ width: "100%", borderRadius: 14, border: "1px solid rgba(255,255,255,0.1)", maxHeight: 180, objectFit: "cover" }} />
-                  <motion.button whileTap={{ scale: 0.9 }} onClick={() => setChartUrl("")}
-                    style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%",
-                      background: "rgba(0,0,0,0.7)", border: "none", color: "white", fontSize: 14, cursor: "pointer" }}>
-                    ✕
-                  </motion.button>
-                </div>
-              ) : (
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                  style={{
-                    width: "100%", padding: "16px", borderRadius: 14, border: "1px dashed rgba(255,255,255,0.15)",
-                    background: "rgba(255,255,255,0.03)", cursor: "pointer",
-                    color: "rgba(255,255,255,0.3)", fontSize: 13, fontFamily: "monospace",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  }}>
-                  {uploading ? "⏳ Hochladen..." : "📸 Foto hinzufügen"}
-                </motion.button>
-              )}
-            </div>
+
           </>
         )}
 
@@ -871,7 +1054,7 @@ function Calendar({ yr, mo, setYr, setMo, user }) {
 
       <AnimatePresence>
         {modalDay !== null && (
-          <InputModal day={modalDay} month={mo} year={yr} onClose={() => setModalDay(null)} user={user} />
+          <InputModal day={modalDay} month={mo} year={yr} onClose={() => setModalDay(null)} />
         )}
       </AnimatePresence>
 
@@ -925,24 +1108,42 @@ function NavBtn({ onClick, children }) {
 // ─── STATS TAB ────────────────────────────────────────────────────────────────
 function StatsTab({ yr, mo, setYr, setMo }) {
   const { data } = usePnL();
-  const today = new Date();
-
-  // Month entries
+  const { t } = useLang();
   const monthKey = `${yr}-${String(mo+1).padStart(2,"0")}`;
+  const daysInMonth = new Date(yr, mo+1, 0).getDate();
+
   const monthEntries = Object.entries(data)
     .filter(([k]) => k.startsWith(monthKey))
     .sort(([a],[b]) => a.localeCompare(b));
 
-  const totalPnL = monthEntries.reduce((s,[,v]) => s + (v.pnl||0), 0);
+  const totalPnL = monthEntries.reduce((s,[,v]) => s+(v.pnl||0), 0);
   const adherenceDays = monthEntries.filter(([,v]) => v.adherence).length;
-  const winDays = monthEntries.filter(([,v]) => v.pnl > 0).length;
-  const lossDays = monthEntries.filter(([,v]) => v.pnl < 0).length;
-  const daysInMonth = new Date(yr, mo+1, 0).getDate();
+  const winDays = monthEntries.filter(([,v]) => (v.pnl||0) > 0).length;
+  const lossDays = monthEntries.filter(([,v]) => (v.pnl||0) < 0).length;
+  const pnlValues = monthEntries.map(([,v]) => v.pnl||0).filter(p => p !== 0);
+  const avgDay = pnlValues.length > 0 ? pnlValues.reduce((a,b) => a+b,0)/pnlValues.length : 0;
+  const bestDay = pnlValues.length > 0 ? Math.max(...pnlValues) : 0;
+  const worstDay = pnlValues.length > 0 ? Math.min(...pnlValues) : 0;
+  const winRate = monthEntries.length > 0 ? Math.round(winDays/monthEntries.length*100) : 0;
+
+  // Streak record
+  let maxStreak = 0, curStreak = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${monthKey}-${String(d).padStart(2,"0")}`;
+    if (data[key]?.adherence) { curStreak++; maxStreak = Math.max(maxStreak, curStreak); }
+    else curStreak = 0;
+  }
+
   const [target, setTarget] = useState(() => {
     try { return Number(localStorage.getItem(`target_${monthKey}`) || 0); } catch { return 0; }
   });
   const [editingTarget, setEditingTarget] = useState(false);
   const [tempTarget, setTempTarget] = useState("");
+
+  useEffect(() => {
+    try { setTarget(Number(localStorage.getItem(`target_${monthKey}`) || 0)); } catch {}
+    setEditingTarget(false);
+  }, [monthKey]);
 
   const saveTarget = () => {
     const val = Number(tempTarget);
@@ -951,49 +1152,78 @@ function StatsTab({ yr, mo, setYr, setMo }) {
     setEditingTarget(false);
   };
 
-  const progress = target > 0 ? Math.min(totalPnL / target, 1) : 0;
   const progressPct = target > 0 ? Math.round((totalPnL / target) * 100) : 0;
 
-  // Chart data: daily pnl for month
-  const chartData = [];
-  let cumulative = 0;
-  for (let d = 1; d <= daysInMonth; d++) {
-    const key = `${monthKey}-${String(d).padStart(2,"0")}`;
-    const entry = data[key];
-    const pnl = entry?.pnl || 0;
-    cumulative += pnl;
-    if (entry) chartData.push({ d, pnl, cumulative, hasData: true });
-    else chartData.push({ d, pnl: 0, cumulative, hasData: false });
-  }
+  // Chart data
+  const chartData = useMemo(() => {
+    const arr = [];
+    let cum = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${monthKey}-${String(d).padStart(2,"0")}`;
+      const entry = data[key];
+      const pnl = entry?.pnl || 0;
+      cum += pnl;
+      arr.push({ d, pnl, cumulative: cum, hasData: !!entry, adherence: entry?.adherence });
+    }
+    return arr;
+  }, [data, monthKey, daysInMonth]);
 
   const filledData = chartData.filter(p => p.hasData);
-  const maxAbs = filledData.length > 0 ? Math.max(...filledData.map(p => Math.abs(p.pnl)), 1) : 1;
-  const maxCum = Math.max(...chartData.map(p => Math.abs(p.cumulative)), 1);
+  const maxAbsPnl = filledData.length > 0 ? Math.max(...filledData.map(p => Math.abs(p.pnl)), 1) : 1;
+  const allCum = chartData.map(p => p.cumulative);
+  const maxCum = Math.max(...allCum.map(Math.abs), 1);
+  const minCum = Math.min(...allCum);
+  const maxCumRaw = Math.max(...allCum);
 
   const navigate = (dir) => {
-    if (dir === -1) { if (mo === 0) { setMo(11); setYr(y => y-1); } else setMo(m => m-1); }
-    else { if (mo === 11) { setMo(0); setYr(y => y+1); } else setMo(m => m+1); }
+    if (dir === -1) { if (mo === 0) { setMo(11); setYr(y=>y-1); } else setMo(m=>m-1); }
+    else { if (mo === 11) { setMo(0); setYr(y=>y+1); } else setMo(m=>m+1); }
   };
 
   const fmtShort = (n) => {
-    if (!n) return "0";
+    if (n === null || n === undefined || isNaN(n)) return "0";
     const abs = Math.abs(n);
     const sign = n >= 0 ? "+" : "−";
     if (abs >= 1000000) return sign + (abs/1000000).toFixed(1) + "M";
     if (abs >= 1000) return sign + (abs/1000).toFixed(1) + "K";
-    return sign + abs;
+    return sign + Math.round(abs);
   };
+
+  // SVG cumulative line with smooth bezier
+  const W = 300, H = 100;
+  const cumPoints = chartData.map((p, i) => {
+    const x = (i / (daysInMonth - 1)) * W;
+    const range = maxCumRaw - minCum || 1;
+    const y = H - 10 - ((p.cumulative - minCum) / range) * (H - 20);
+    return { x, y, ...p };
+  });
+
+  const smoothPath = (pts) => {
+    if (pts.length < 2) return "";
+    let d = `M${pts[0].x},${pts[0].y}`;
+    for (let i = 1; i < pts.length; i++) {
+      const prev = pts[i-1], cur = pts[i];
+      const cpx = (prev.x + cur.x) / 2;
+      d += ` C${cpx},${prev.y} ${cpx},${cur.y} ${cur.x},${cur.y}`;
+    }
+    return d;
+  };
+
+  const linePath = smoothPath(cumPoints);
+  const areaPath = linePath + ` L${cumPoints[cumPoints.length-1].x},${H} L0,${H} Z`;
+  const zeroY = H - 10 - ((0 - minCum) / (maxCumRaw - minCum || 1)) * (H - 20);
+  const lineColor = totalPnL >= 0 ? "#34d399" : "#f87171";
 
   return (
     <div style={{ minHeight: "100vh", position: "relative" }}>
       <MeshBackground />
       <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top,20px) 14px 100px" }}>
 
-        {/* Header + nav */}
+        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 16, marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>STATISTIKEN</div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif", letterSpacing: "-0.02em" }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>{t.statistics.toUpperCase()}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>
               {MONTHS[mo]} <span style={{ color: "rgba(255,255,255,0.22)", fontSize: 18 }}>{yr}</span>
             </div>
           </div>
@@ -1003,182 +1233,159 @@ function StatsTab({ yr, mo, setYr, setMo }) {
           </div>
         </div>
 
-        {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-          <GlassTile label="Monats-PnL" value={fmtShort(totalPnL) + " €"} color={totalPnL >= 0 ? "#34d399" : "#f87171"} />
-          <GlassTile label="Disziplin" value={monthEntries.length > 0 ? `${Math.round(adherenceDays/monthEntries.length*100)}%` : "—"} color="#a78bfa" />
-          <GlassTile label="Win-Tage" value={winDays} color="#34d399" />
-          <GlassTile label="Loss-Tage" value={lossDays} color="#f87171" />
+        {/* 6-tile grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+          <GlassTile label={t.monthlyPnL} value={fmtShort(totalPnL)+"€"} color={totalPnL>=0?"#34d399":"#f87171"} sub={null} />
+          <GlassTile label={t.discipline} value={monthEntries.length>0?`${Math.round(adherenceDays/monthEntries.length*100)}%`:"—"} color="#a78bfa" sub={null} />
+          <GlassTile label={t.winRate} value={monthEntries.length>0?`${winRate}%`:"—"} color="#fbbf24" sub={null} />
+          <GlassTile label={t.bestDay} value={bestDay!==0?fmtShort(bestDay)+"€":"—"} color="#34d399" sub={null} />
+          <GlassTile label={t.worstDay} value={worstDay!==0?fmtShort(worstDay)+"€":"—"} color="#f87171" sub={null} />
+          <GlassTile label={t.streakRecord} value={maxStreak>0?`${maxStreak}`:"—"} color="#a78bfa" sub={maxStreak>0?t.days:null} />
         </div>
 
-        {/* Monthly Target */}
-        <div style={{
-          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
-          padding: "18px 18px 16px", marginBottom: 16,
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace" }}>MONATSZIEL</div>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setEditingTarget(true); setTempTarget(target || ""); }}
-              style={{ fontSize: 10, color: "#a78bfa", background: "none", border: "none", cursor: "pointer", fontFamily: "monospace" }}>
-              {target > 0 ? "ÄNDERN" : "SETZEN"}
+        {/* Monthly target */}
+        <div style={{ background:"rgba(255,255,255,0.04)", backdropFilter:"blur(20px)",
+          border:"1px solid rgba(255,255,255,0.09)", borderRadius:20, padding:"16px 18px", marginBottom:14 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.12em", fontFamily:"monospace" }}>{t.monthlyTarget}</div>
+            <motion.button whileTap={{ scale:0.9 }} onClick={() => { setEditingTarget(true); setTempTarget(target||""); }}
+              style={{ fontSize:9, color:"#a78bfa", background:"none", border:"none", cursor:"pointer", fontFamily:"monospace" }}>
+              {target > 0 ? t.change : t.set}
             </motion.button>
           </div>
-
-          {editingTarget ? (
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <input type="number" value={tempTarget} onChange={e => setTempTarget(e.target.value)}
-                placeholder="Ziel in €" autoFocus
-                style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.5)",
-                  borderRadius: 10, padding: "10px 12px", color: "white", fontSize: 16,
-                  fontFamily: "monospace", outline: "none" }}
-              />
-              <motion.button whileTap={{ scale: 0.95 }} onClick={saveTarget}
-                style={{ padding: "10px 16px", borderRadius: 10, border: "none",
-                  background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white",
-                  fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "monospace" }}>
-                OK
-              </motion.button>
+          {editingTarget && (
+            <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+              <input type="number" value={tempTarget} onChange={e=>setTempTarget(e.target.value)} autoFocus
+                style={{ flex:1, background:"rgba(255,255,255,0.06)", border:"1px solid rgba(139,92,246,0.5)",
+                  borderRadius:10, padding:"10px 12px", color:"white", fontSize:15, fontFamily:"monospace", outline:"none" }} />
+              <motion.button whileTap={{ scale:0.95 }} onClick={saveTarget}
+                style={{ padding:"10px 16px", borderRadius:10, border:"none",
+                  background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"white", fontSize:12, fontWeight:700, cursor:"pointer" }}>OK</motion.button>
             </div>
-          ) : null}
-
+          )}
           {target > 0 ? (
             <>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>
-                  {fmtShort(totalPnL)} € von {fmtShort(target)} €
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "monospace",
-                  color: progressPct >= 100 ? "#34d399" : progressPct >= 50 ? "#fbbf24" : "#f87171" }}>
-                  {progressPct}%
-                </span>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                <span style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"monospace" }}>{fmtShort(totalPnL)}€ / {fmtShort(target)}€</span>
+                <span style={{ fontSize:11, fontWeight:700, fontFamily:"monospace",
+                  color:progressPct>=100?"#34d399":progressPct>=50?"#fbbf24":"#f87171" }}>{progressPct}%</span>
               </div>
-              {/* Progress bar */}
-              <div style={{ height: 10, background: "rgba(255,255,255,0.07)", borderRadius: 99, overflow: "hidden" }}>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.max(0, Math.min(100, progressPct))}%` }}
-                  transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                  style={{
-                    height: "100%", borderRadius: 99,
-                    background: progressPct >= 100
-                      ? "linear-gradient(90deg,#059669,#34d399)"
-                      : progressPct >= 50
-                      ? "linear-gradient(90deg,#d97706,#fbbf24)"
-                      : "linear-gradient(90deg,#dc2626,#f87171)",
-                    boxShadow: progressPct >= 100 ? "0 0 10px rgba(52,211,153,0.5)" : "none",
-                  }}
-                />
+              <div style={{ height:8, background:"rgba(255,255,255,0.07)", borderRadius:99, overflow:"hidden" }}>
+                <motion.div initial={{ width:0 }} animate={{ width:`${Math.max(0,Math.min(100,progressPct))}%` }}
+                  transition={{ duration:1, ease:"easeOut" }}
+                  style={{ height:"100%", borderRadius:99,
+                    background:progressPct>=100?"linear-gradient(90deg,#059669,#34d399)":progressPct>=50?"linear-gradient(90deg,#d97706,#fbbf24)":"linear-gradient(90deg,#dc2626,#f87171)",
+                    boxShadow:progressPct>=100?"0 0 10px rgba(52,211,153,0.5)":"none" }} />
               </div>
-              {progressPct >= 100 && (
-                <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "#34d399", fontFamily: "monospace" }}>
-                  🎯 Ziel erreicht!
-                </div>
-              )}
+              {progressPct>=100 && <div style={{ textAlign:"center",marginTop:6,fontSize:10,color:"#34d399",fontFamily:"monospace" }}>{t.targetReached}</div>}
             </>
           ) : (
-            <div style={{ textAlign: "center", padding: "8px 0", fontSize: 12, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>
-              Kein Ziel gesetzt
-            </div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.18)", fontFamily:"monospace", textAlign:"center", padding:"4px 0" }}>{t.noTarget}</div>
           )}
         </div>
 
-        {/* Bar Chart - Daily PnL */}
-        <div style={{
-          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
-          padding: "18px 14px 14px", marginBottom: 16,
-        }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 16 }}>TÄGLICHER PNL</div>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 80 }}>
-            {Array.from({ length: daysInMonth }, (_, i) => {
-              const entry = chartData[i];
-              const hasData = entry?.hasData;
-              const pnl = entry?.pnl || 0;
-              const h = hasData ? Math.max(4, (Math.abs(pnl) / maxAbs) * 72) : 3;
-              const isPos = pnl >= 0;
+        {/* Bar chart - daily PnL with zero line */}
+        <div style={{ background:"rgba(255,255,255,0.04)", backdropFilter:"blur(20px)",
+          border:"1px solid rgba(255,255,255,0.09)", borderRadius:20, padding:"16px 14px 12px", marginBottom:14 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.12em", fontFamily:"monospace" }}>{t.dailyPnL}</div>
+            <div style={{ display:"flex", gap:12 }}>
+              <span style={{ fontSize:8, color:"rgba(52,211,153,0.7)", fontFamily:"monospace" }}>▲ {winDays}</span>
+              <span style={{ fontSize:8, color:"rgba(248,113,113,0.7)", fontFamily:"monospace" }}>▼ {lossDays}</span>
+            </div>
+          </div>
+          {/* Two-sided bar chart */}
+          <div style={{ display:"flex", alignItems:"center", height:100, gap:1.5, position:"relative" }}>
+            {/* Zero line */}
+            <div style={{ position:"absolute", left:0, right:0, top:"50%", height:1,
+              background:"rgba(255,255,255,0.12)", zIndex:1 }} />
+            {chartData.map((p, i) => {
+              const half = 46;
+              const h = p.hasData ? Math.max(3, (Math.abs(p.pnl)/maxAbsPnl)*half) : 2;
+              const isPos = p.pnl >= 0;
+              const isAdherence = p.adherence;
               return (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                <div key={i} style={{ flex:1, height:"100%", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
                   <motion.div
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: 1 }}
-                    transition={{ delay: i * 0.01, duration: 0.4, ease: "easeOut" }}
+                    initial={{ scaleY:0 }} animate={{ scaleY:1 }}
+                    transition={{ delay:i*0.008, duration:0.35, ease:"easeOut" }}
                     style={{
-                      width: "100%", height: h,
-                      background: !hasData ? "rgba(255,255,255,0.06)"
-                        : isPos ? "linear-gradient(180deg,rgba(52,211,153,0.9),rgba(16,185,129,0.5))"
-                        : "linear-gradient(180deg,rgba(248,113,113,0.9),rgba(239,68,68,0.5))",
-                      borderRadius: "3px 3px 2px 2px",
-                      boxShadow: hasData ? (isPos ? "0 0 4px rgba(52,211,153,0.3)" : "0 0 4px rgba(248,113,113,0.3)") : "none",
-                      transformOrigin: "bottom",
+                      position:"absolute",
+                      width:"100%",
+                      height: h,
+                      [isPos ? "bottom" : "top"]: "50%",
+                      background: !p.hasData ? "rgba(255,255,255,0.05)"
+                        : isPos ? (isAdherence ? "linear-gradient(180deg,rgba(52,211,153,1),rgba(16,185,129,0.6))" : "linear-gradient(180deg,rgba(52,211,153,0.5),rgba(16,185,129,0.3))")
+                        : (isAdherence ? "linear-gradient(0deg,rgba(248,113,113,1),rgba(239,68,68,0.6))" : "linear-gradient(0deg,rgba(248,113,113,0.5),rgba(239,68,68,0.3))"),
+                      borderRadius: isPos ? "3px 3px 0 0" : "0 0 3px 3px",
+                      boxShadow: p.hasData ? (isPos?"0 0 4px rgba(52,211,153,0.25)":"0 0 4px rgba(248,113,113,0.25)") : "none",
+                      transformOrigin: isPos ? "bottom" : "top",
                     }}
                   />
                 </div>
               );
             })}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>1</span>
-            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>{Math.round(daysInMonth/2)}</span>
-            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>{daysInMonth}</span>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+            <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>1</span>
+            <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>{Math.round(daysInMonth/2)}</span>
+            <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>{daysInMonth}</span>
           </div>
         </div>
 
-        {/* Cumulative line chart */}
-        <div style={{
-          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
-          padding: "18px 14px 14px",
-        }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 16 }}>KUMULATIVER GEWINN</div>
-          <svg width="100%" height="90" viewBox={`0 0 ${daysInMonth} 90`} preserveAspectRatio="none"
-            style={{ display: "block", overflow: "visible" }}>
+        {/* Cumulative line chart - smooth bezier */}
+        <div style={{ background:"rgba(255,255,255,0.04)", backdropFilter:"blur(20px)",
+          border:"1px solid rgba(255,255,255,0.09)", borderRadius:20, padding:"16px 14px 12px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.12em", fontFamily:"monospace" }}>{t.cumulativeGain}</div>
+            <span style={{ fontSize:11, fontWeight:700, fontFamily:"monospace", color:lineColor }}>{fmtShort(totalPnL)}€</span>
+          </div>
+          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display:"block", overflow:"visible" }}>
             <defs>
-              <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={totalPnL >= 0 ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)"} />
+              <linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={totalPnL>=0?"rgba(52,211,153,0.3)":"rgba(248,113,113,0.3)"} />
                 <stop offset="100%" stopColor="rgba(0,0,0,0)" />
               </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
             </defs>
+            {/* Grid lines */}
+            {[0.25,0.5,0.75].map(f => (
+              <line key={f} x1={0} y1={H*f} x2={W} y2={H*f} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+            ))}
             {/* Zero line */}
-            <line x1={0} y1={45} x2={daysInMonth} y2={45} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
-            {/* Area fill */}
-            {chartData.length > 1 && (() => {
-              const pts = chartData.map((p,i) => {
-                const y = 45 - (p.cumulative / maxCum) * 40;
-                return `${i},${y}`;
-              });
-              const area = `M${pts.join("L")}L${daysInMonth-1},45L0,45Z`;
-              return <path d={area} fill="url(#lineGrad)" />;
-            })()}
+            {minCum < 0 && maxCumRaw > 0 && (
+              <line x1={0} y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.15)" strokeWidth="0.8" strokeDasharray="4,4" />
+            )}
+            {/* Area */}
+            {cumPoints.length > 1 && <path d={areaPath} fill="url(#cumGrad)" />}
             {/* Line */}
-            {chartData.length > 1 && (() => {
-              const pts = chartData.map((p,i) => {
-                const y = 45 - (p.cumulative / maxCum) * 40;
-                return `${i},${y}`;
-              });
-              return <polyline
-                points={pts.join(" ")}
-                fill="none"
-                stroke={totalPnL >= 0 ? "#34d399" : "#f87171"}
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />;
-            })()}
-            {/* End dot */}
-            {chartData.length > 0 && (() => {
-              const last = chartData[chartData.length - 1];
-              const y = 45 - (last.cumulative / maxCum) * 40;
-              return <circle cx={daysInMonth-1} cy={y} r="2.5"
-                fill={totalPnL >= 0 ? "#34d399" : "#f87171"}
-                style={{ filter: `drop-shadow(0 0 4px ${totalPnL >= 0 ? "#34d399" : "#f87171"})` }}
-              />;
+            {cumPoints.length > 1 && (
+              <path d={linePath} fill="none" stroke={lineColor} strokeWidth="2"
+                strokeLinejoin="round" strokeLinecap="round" filter="url(#glow)" />
+            )}
+            {/* Dots at data points */}
+            {cumPoints.filter(p => p.hasData).map((p, i) => (
+              <circle key={i} cx={p.x} cy={p.y} r="2"
+                fill={p.pnl>=0?"#34d399":"#f87171"}
+                style={{ filter:`drop-shadow(0 0 3px ${p.pnl>=0?"#34d399":"#f87171"})` }}
+              />
+            ))}
+            {/* End dot larger */}
+            {cumPoints.length > 0 && (() => {
+              const last = cumPoints[cumPoints.filter(p=>p.hasData).length > 0
+                ? cumPoints.map((p,i)=>({...p,i})).filter(p=>p.hasData).slice(-1)[0]?.i ?? cumPoints.length-1
+                : cumPoints.length-1];
+              if (!last) return null;
+              return <circle cx={last.x} cy={last.y} r="4" fill={lineColor}
+                style={{ filter:`drop-shadow(0 0 6px ${lineColor})` }} />;
             })()}
           </svg>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>0</span>
-            <span style={{ fontSize: 9, fontFamily: "monospace", fontWeight: 700,
-              color: totalPnL >= 0 ? "#34d399" : "#f87171" }}>{fmtShort(totalPnL)} €</span>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+            <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>1. {MONTHS[mo].slice(0,3)}</span>
+            <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>{daysInMonth}. {MONTHS[mo].slice(0,3)}</span>
           </div>
         </div>
       </div>
@@ -1186,26 +1393,39 @@ function StatsTab({ yr, mo, setYr, setMo }) {
   );
 }
 
-function GlassTile({ label, value, color }) {
+
+function GlassTile({ label, value, color, sub }) {
   return (
     <div style={{
       background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
       border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16,
-      padding: "14px 14px 12px",
+      padding: "12px 12px 10px",
     }}>
-      <div style={{ fontSize: 8, color: "rgba(255,255,255,0.28)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 800, color, fontFamily: "'DM Mono', monospace", letterSpacing: "-0.02em" }}>{value}</div>
+      <div style={{ fontSize: 7, color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em", fontFamily: "monospace", marginBottom: 5 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color, fontFamily: "'DM Mono', monospace", letterSpacing: "-0.02em" }}>{value}</div>
+      {sub && <div style={{ fontSize: 8, color: "rgba(255,255,255,0.2)", fontFamily: "monospace", marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
 
 // ─── PROFILE TAB ──────────────────────────────────────────────────────────────
+const LANGUAGES = [
+  { code: "de", flag: "🇩🇪", name: "Deutsch" },
+  { code: "en", flag: "🇬🇧", name: "English" },
+  { code: "fr", flag: "🇫🇷", name: "Français" },
+  { code: "es", flag: "🇪🇸", name: "Español" },
+  { code: "hi", flag: "🇮🇳", name: "हिन्दी" },
+  { code: "pt", flag: "🇧🇷", name: "Português" },
+];
+
 function ProfileTab({ user, onLogout }) {
+  const { t, lang, changeLang } = useLang();
   const [changingPw, setChangingPw] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [pwMsg, setPwMsg] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [showLang, setShowLang] = useState(false);
 
   const maskedEmail = user.email
     ? user.email.slice(0,3) + "***@" + user.email.split("@")[1]
@@ -1214,79 +1434,103 @@ function ProfileTab({ user, onLogout }) {
   const handleChangePw = async () => {
     const { error } = await supabase.auth.updateUser({ password: newPw });
     if (error) setPwMsg("Fehler: " + error.message);
-    else { setPwMsg("✓ Passwort geändert!"); setNewPw(""); setChangingPw(false); }
+    else { setPwMsg("✓ " + t.saved); setNewPw(""); setChangingPw(false); }
     setTimeout(() => setPwMsg(""), 3000);
   };
 
   const handleDelete = async () => {
-    if (deleteConfirm !== "LÖSCHEN") return;
+    if (deleteConfirm !== t.deleteConfirmWord) return;
     await supabase.from("pnl_entries").delete().eq("user_id", user.id);
     await supabase.auth.signOut();
     onLogout();
   };
+
+  const currentLang = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0];
 
   return (
     <div style={{ minHeight: "100vh", position: "relative" }}>
       <MeshBackground />
       <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top,20px) 14px 100px" }}>
 
-        <div style={{ paddingTop: 16, marginBottom: 28 }}>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>KONTO</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>Profil</div>
+        <div style={{ paddingTop: 16, marginBottom: 24 }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>{t.account}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>{t.profileTitle}</div>
         </div>
 
         {/* Avatar */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 28 }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: "50%",
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
+          <div style={{ width: 72, height: 72, borderRadius: "50%",
             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28, marginBottom: 12,
-            boxShadow: "0 0 24px rgba(99,102,241,0.4)",
-          }}>📈</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>{maskedEmail}</div>
+            fontSize: 28, marginBottom: 10, boxShadow: "0 0 24px rgba(99,102,241,0.4)" }}>📈</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>{maskedEmail}</div>
         </div>
 
-        {/* Sections */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+          {/* Language selector */}
+          <div style={{ background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "hidden" }}>
+            <motion.button whileTap={{ scale: 0.98 }} onClick={() => setShowLang(v => !v)}
+              style={{ width: "100%", padding: "16px 20px", background: "none", border: "none",
+                display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 20 }}>🌐</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>{t.language}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 13 }}>{currentLang.flag}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>{currentLang.name}</span>
+                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>{showLang ? "▲" : "▶"}</span>
+              </div>
+            </motion.button>
+            <AnimatePresence>
+              {showLang && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
+                  <div style={{ padding: "0 16px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {LANGUAGES.map(l => (
+                      <motion.button key={l.code} whileTap={{ scale: 0.95 }} onClick={() => { changeLang(l.code); setShowLang(false); }}
+                        style={{
+                          padding: "10px 12px", borderRadius: 12, border: "none", cursor: "pointer",
+                          background: lang === l.code ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.05)",
+                          border: lang === l.code ? "1px solid rgba(139,92,246,0.4)" : "1px solid rgba(255,255,255,0.07)",
+                          display: "flex", alignItems: "center", gap: 8,
+                        }}>
+                        <span style={{ fontSize: 18 }}>{l.flag}</span>
+                        <span style={{ fontSize: 11, color: lang === l.code ? "#a78bfa" : "rgba(255,255,255,0.5)", fontFamily: "monospace", fontWeight: 600 }}>{l.name}</span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Change password */}
-          <div style={{
-            background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "hidden",
-          }}>
+          <div style={{ background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "hidden" }}>
             <motion.button whileTap={{ scale: 0.98 }} onClick={() => setChangingPw(v => !v)}
-              style={{
-                width: "100%", padding: "18px 20px", background: "none", border: "none",
-                display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer",
-              }}>
+              style={{ width: "100%", padding: "16px 20px", background: "none", border: "none",
+                display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 18 }}>🔑</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>Passwort ändern</span>
+                <span style={{ fontSize: 20 }}>🔑</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>{t.passwordChange}</span>
               </div>
-              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 16 }}>{changingPw ? "▲" : "▶"}</span>
+              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>{changingPw ? "▲" : "▶"}</span>
             </motion.button>
             <AnimatePresence>
               {changingPw && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  style={{ overflow: "hidden" }}
-                >
-                  <div style={{ padding: "0 20px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
-                    <input type="password" placeholder="Neues Passwort" value={newPw}
-                      onChange={e => setNewPw(e.target.value)}
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
+                  <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                    <input type="password" placeholder={t.newPassword} value={newPw} onChange={e => setNewPw(e.target.value)}
                       style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: 10, padding: "12px 14px", color: "white", fontSize: 14,
-                        fontFamily: "monospace", outline: "none" }}
-                    />
+                        borderRadius: 10, padding: "12px 14px", color: "white", fontSize: 14, fontFamily: "monospace", outline: "none" }} />
                     <motion.button whileTap={{ scale: 0.97 }} onClick={handleChangePw}
                       style={{ padding: "12px", borderRadius: 10, border: "none",
                         background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                        color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "monospace" }}>
-                      Speichern
-                    </motion.button>
+                        color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "monospace" }}>{t.save}</motion.button>
                     {pwMsg && <div style={{ fontSize: 12, color: pwMsg.startsWith("✓") ? "#34d399" : "#f87171", fontFamily: "monospace", textAlign: "center" }}>{pwMsg}</div>}
                   </div>
                 </motion.div>
@@ -1296,60 +1540,41 @@ function ProfileTab({ user, onLogout }) {
 
           {/* Logout */}
           <motion.button whileTap={{ scale: 0.97 }} onClick={onLogout}
-            style={{
-              width: "100%", padding: "18px 20px",
-              background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
-              display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
-            }}>
-            <span style={{ fontSize: 18 }}>🚪</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>Ausloggen</span>
+            style={{ width: "100%", padding: "16px 20px", background: "rgba(255,255,255,0.04)",
+              backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
+              display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+            <span style={{ fontSize: 20 }}>🚪</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>{t.logout}</span>
           </motion.button>
 
           {/* Delete account */}
-          <div style={{
-            background: "rgba(239,68,68,0.05)", backdropFilter: "blur(20px)",
-            border: "1px solid rgba(239,68,68,0.15)", borderRadius: 20, overflow: "hidden",
-          }}>
+          <div style={{ background: "rgba(239,68,68,0.05)", backdropFilter: "blur(20px)",
+            border: "1px solid rgba(239,68,68,0.15)", borderRadius: 20, overflow: "hidden" }}>
             <motion.button whileTap={{ scale: 0.98 }} onClick={() => setDeleting(v => !v)}
-              style={{
-                width: "100%", padding: "18px 20px", background: "none", border: "none",
-                display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer",
-              }}>
+              style={{ width: "100%", padding: "16px 20px", background: "none", border: "none",
+                display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 18 }}>🗑️</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#f87171", fontFamily: "monospace" }}>Konto löschen</span>
+                <span style={{ fontSize: 20 }}>🗑️</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#f87171", fontFamily: "monospace" }}>{t.deleteAccount}</span>
               </div>
-              <span style={{ color: "rgba(239,68,68,0.4)", fontSize: 16 }}>{deleting ? "▲" : "▶"}</span>
+              <span style={{ color: "rgba(239,68,68,0.4)", fontSize: 14 }}>{deleting ? "▲" : "▶"}</span>
             </motion.button>
             <AnimatePresence>
               {deleting && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  style={{ overflow: "hidden" }}
-                >
-                  <div style={{ padding: "0 20px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ fontSize: 11, color: "rgba(239,68,68,0.7)", fontFamily: "monospace", lineHeight: 1.6 }}>
-                      ⚠ Alle deine Daten werden unwiderruflich gelöscht. Tippe LÖSCHEN zur Bestätigung.
-                    </div>
-                    <input placeholder="LÖSCHEN" value={deleteConfirm}
-                      onChange={e => setDeleteConfirm(e.target.value)}
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
+                  <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ fontSize: 11, color: "rgba(239,68,68,0.7)", fontFamily: "monospace", lineHeight: 1.6 }}>{t.deleteWarning}</div>
+                    <input placeholder={t.deleteConfirmWord} value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)}
                       style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
-                        borderRadius: 10, padding: "12px 14px", color: "#f87171", fontSize: 14,
-                        fontFamily: "monospace", outline: "none" }}
-                    />
-                    <motion.button whileTap={{ scale: 0.97 }}
-                      onClick={handleDelete}
-                      disabled={deleteConfirm !== "LÖSCHEN"}
+                        borderRadius: 10, padding: "12px 14px", color: "#f87171", fontSize: 14, fontFamily: "monospace", outline: "none" }} />
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={handleDelete}
+                      disabled={deleteConfirm !== t.deleteConfirmWord}
                       style={{ padding: "12px", borderRadius: 10, border: "none",
-                        background: deleteConfirm === "LÖSCHEN" ? "linear-gradient(135deg,#dc2626,#ef4444)" : "rgba(239,68,68,0.15)",
-                        color: deleteConfirm === "LÖSCHEN" ? "white" : "rgba(239,68,68,0.4)",
-                        fontSize: 13, fontWeight: 700, cursor: deleteConfirm === "LÖSCHEN" ? "pointer" : "not-allowed",
-                        fontFamily: "monospace" }}>
-                      Konto endgültig löschen
-                    </motion.button>
+                        background: deleteConfirm === t.deleteConfirmWord ? "linear-gradient(135deg,#dc2626,#ef4444)" : "rgba(239,68,68,0.15)",
+                        color: deleteConfirm === t.deleteConfirmWord ? "white" : "rgba(239,68,68,0.4)",
+                        fontSize: 13, fontWeight: 700, cursor: deleteConfirm === t.deleteConfirmWord ? "pointer" : "not-allowed",
+                        fontFamily: "monospace" }}>{t.deleteBtn}</motion.button>
                   </div>
                 </motion.div>
               )}
@@ -1366,7 +1591,7 @@ function BottomNav({ tab, setTab }) {
   const tabs = [
     { id: "calendar", icon: "📅", label: "Kalender" },
     { id: "stats",    icon: "📊", label: "Stats" },
-    { id: "regeln",   icon: "📋", label: "Regeln" },
+    { id: "propfirm", icon: "🏦", label: "Prop Firm" },
     { id: "profile",  icon: "👤", label: "Profil" },
   ];
   return (
@@ -1426,91 +1651,589 @@ function BottomNav({ tab, setTab }) {
 }
 
 
-// ─── REGELWERK TAB ────────────────────────────────────────────────────────────
-function RegelnTab({ user }) {
-  const today = new Date();
-  const todayKey = toKey(today.getFullYear(), today.getMonth(), today.getDate());
+// ─── PROP FIRM TAB ────────────────────────────────────────────────────────────
+const PROP_FIRMS_DATA = [
+  {
+    id: "apex",
+    name: "Apex Trader Funding",
+    emoji: "🦅",
+    tagline: "Biggest. Most flexible. Best for scaling.",
+    rating: 4.5,
+    trustpilot: "4.5/5 (11K+ reviews)",
+    difficulty: "Easy",
+    diffColor: "#34d399",
+    founded: "2021",
+    website: "apextraderfunding.com",
+    highlight: "No daily drawdown limit",
+    payoutSplit: "100% first $25K, then 90/10",
+    payoutSpeed: "7-14 days",
+    evalSteps: "1-Step",
+    maxFunding: "$1.5M (20 accounts)",
+    monthly: "$187 (50K)",
+    platforms: ["NinjaTrader","Tradovate","Rithmic","WealthCharts","Bookmap"],
+    pros: [
+      "No daily loss limit — only trailing drawdown",
+      "Up to 20 simultaneous accounts",
+      "100% of first $25,000 in profits",
+      "Frequent 70-80% discount promos",
+      "$598M+ paid out to traders",
+    ],
+    cons: [
+      "Higher monthly fee vs Topstep",
+      "Payout can take 7-14 days",
+      "Dashboard less polished than Topstep",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "Trailing (no daily limit)", warn: false },
+      { label: "Min Trading Days", value: "7 days to pass eval", warn: false },
+      { label: "News Trading", value: "Allowed", warn: false },
+      { label: "Overnight Holds", value: "Allowed", warn: false },
+      { label: "Consistency Rule", value: "None", warn: false },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "Scalers & multi-account traders",
+    color: "#f59e0b",
+  },
+  {
+    id: "topstep",
+    name: "Topstep",
+    emoji: "🏆",
+    tagline: "The OG. Best education & dashboard.",
+    rating: 4.4,
+    trustpilot: "4.4/5 (8K+ reviews)",
+    difficulty: "Medium",
+    diffColor: "#fbbf24",
+    founded: "2012",
+    website: "topstep.com",
+    highlight: "Best dashboard & education",
+    payoutSplit: "100% first $10K, then 90/10",
+    payoutSpeed: "5-7 days (daily withdrawals funded)",
+    evalSteps: "1-Step",
+    maxFunding: "$300K",
+    monthly: "$49 (50K)",
+    platforms: ["TopstepX (TradingView-based)"],
+    pros: [
+      "Most established firm (since 2012)",
+      "Excellent education & coaching",
+      "Beautiful dashboard with P&L calendar",
+      "Daily withdrawals once funded",
+      "81K+ funded traders",
+    ],
+    cons: [
+      "Day trading only — no overnight holds",
+      "Only TopstepX platform (no NinjaTrader)",
+      "Daily drawdown limit on funded accounts",
+      "Stricter rules overall",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "EOD trailing → fixed when funded", warn: false },
+      { label: "Daily Loss Limit", value: "Yes — strictly enforced", warn: true },
+      { label: "Overnight Holds", value: "Not allowed", warn: true },
+      { label: "News Trading", value: "Not allowed on funded (2-min buffer)", warn: true },
+      { label: "Consistency Rule", value: "None", warn: false },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "Beginners & education seekers",
+    color: "#3b82f6",
+  },
+  {
+    id: "lucid",
+    name: "Lucid Trading",
+    emoji: "⚡",
+    tagline: "Fastest growing. Fastest payouts. 2025's breakout star.",
+    rating: 4.8,
+    trustpilot: "4.8/5 (1K+ reviews)",
+    difficulty: "Easy",
+    diffColor: "#34d399",
+    founded: "2025",
+    website: "lucidtrading.com",
+    highlight: "Same-day payouts possible",
+    payoutSplit: "90/10 (100% first $10K legacy only)",
+    payoutSpeed: "Same day – 3 days",
+    evalSteps: "1-Step (can pass in 1 day)",
+    maxFunding: "$150K",
+    monthly: "One-time fee only",
+    platforms: ["NinjaTrader","Tradovate","TradingView","Quantower","Sierra Chart","Bookmap"],
+    pros: [
+      "Fastest payouts in the industry",
+      "One-time fee — no monthly subscription",
+      "Can pass evaluation in 1 trading day",
+      "Highest Trustpilot score for its age",
+      "No overnight holds required",
+    ],
+    cons: [
+      "Founded 2025 — youngest & least tested",
+      "40% consistency rule on payouts",
+      "No overnight/weekend holds on sim-funded",
+      "Rules changed frequently in first year",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "Trailing (EOD on some plans)", warn: false },
+      { label: "Daily Loss Limit", value: "Depends on plan (LucidPro: yes)", warn: true },
+      { label: "Overnight Holds", value: "Not on sim-funded (only LucidLive)", warn: true },
+      { label: "News Trading", value: "Allowed", warn: false },
+      { label: "Consistency Rule", value: "40% — big day cap", warn: true },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "Experienced traders who want speed",
+    color: "#8b5cf6",
+  },
+  {
+    id: "bulenox",
+    name: "Bulenox",
+    emoji: "🐂",
+    tagline: "Quiet. Reliable. No BS.",
+    rating: 4.7,
+    trustpilot: "4.7/5 (1.3K+ reviews)",
+    difficulty: "Medium",
+    diffColor: "#fbbf24",
+    founded: "2022",
+    website: "bulenox.com",
+    highlight: "Dual drawdown option at signup",
+    payoutSplit: "90/10 (first $10K free)",
+    payoutSpeed: "Weekly (Wednesdays)",
+    evalSteps: "1-Step",
+    maxFunding: "$2.75M (11 accounts)",
+    monthly: "~$145 (50K)",
+    platforms: ["NinjaTrader","Tradovate","Quantower","Sierra Chart"],
+    pros: [
+      "Choose your drawdown type at signup",
+      "No surprise rule changes",
+      "Scale up to $2.75M",
+      "Free NinjaTrader 8 license",
+      "Clean, straightforward rules",
+    ],
+    cons: [
+      "40% consistency rule on Master payouts",
+      "Weekly payouts only (Wednesdays)",
+      "Smaller community, less social proof",
+      "3-step process (Eval → Master → Funded)",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "Option 1: Trailing | Option 2: EOD", warn: false },
+      { label: "Daily Loss Limit", value: "Only on Option 2", warn: false },
+      { label: "Overnight Holds", value: "Allowed", warn: false },
+      { label: "News Trading", value: "Allowed (unlike Topstep)", warn: false },
+      { label: "Consistency Rule", value: "40% on Master payout stage", warn: true },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "Self-sufficient traders wanting reliability",
+    color: "#ef4444",
+  },
+  {
+    id: "tradeday",
+    name: "TradeDay",
+    emoji: "📅",
+    tagline: "TradingView native. Clean rules.",
+    rating: 4.6,
+    trustpilot: "4.6/5",
+    difficulty: "Easy",
+    diffColor: "#34d399",
+    founded: "2022",
+    website: "tradeday.com",
+    highlight: "Native TradingView support",
+    payoutSplit: "80/20 → 90/10",
+    payoutSpeed: "3-5 days",
+    evalSteps: "1-Step",
+    maxFunding: "$150K",
+    monthly: "~$150 (50K)",
+    platforms: ["Tradovate","NinjaTrader 8","TradingView","Jigsaw"],
+    pros: [
+      "Native TradingView (no bridge needed)",
+      "30% consistency rule (eval only — more forgiving)",
+      "No time limit on evaluation",
+      "Straightforward 1-step process",
+    ],
+    cons: [
+      "Payout split starts at 80/20",
+      "No overnight holds on evaluation",
+      "Smaller firm vs Apex/Topstep",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "Trailing", warn: false },
+      { label: "Daily Loss Limit", value: "Yes", warn: true },
+      { label: "Overnight Holds", value: "Not on evaluation", warn: true },
+      { label: "News Trading", value: "Allowed", warn: false },
+      { label: "Consistency Rule", value: "30% (eval only — forgiving)", warn: false },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "TradingView traders",
+    color: "#06b6d4",
+  },
+  {
+    id: "earn2trade",
+    name: "Earn2Trade",
+    emoji: "🎓",
+    tagline: "Best for beginners. Education-first.",
+    rating: 4.3,
+    trustpilot: "4.3/5",
+    difficulty: "Medium",
+    diffColor: "#fbbf24",
+    founded: "2018",
+    website: "earn2trade.com",
+    highlight: "Best educational content",
+    payoutSplit: "80/20",
+    payoutSpeed: "Weekly",
+    evalSteps: "1-Step (Gauntlet Mini)",
+    maxFunding: "$200K",
+    monthly: "~$150 (50K)",
+    platforms: ["NinjaTrader","Tradovate","Quantower"],
+    pros: [
+      "Excellent learning resources & courses",
+      "Gauntlet Mini: shorter eval period",
+      "Good for developing traders",
+      "Reliable payouts since 2018",
+    ],
+    cons: [
+      "80/20 split — lower than competitors",
+      "Stricter rules than Apex",
+      "Less flexible on trading styles",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "EOD trailing", warn: false },
+      { label: "Daily Loss Limit", value: "Yes", warn: true },
+      { label: "Overnight Holds", value: "Not allowed", warn: true },
+      { label: "News Trading", value: "Restricted", warn: true },
+      { label: "Consistency Rule", value: "None", warn: false },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "Beginners who want to learn",
+    color: "#10b981",
+  },
+  {
+    id: "mff",
+    name: "MyFundedFutures",
+    emoji: "💼",
+    tagline: "Real capital. Real trades.",
+    rating: 4.1,
+    trustpilot: "4.1/5",
+    difficulty: "Hard",
+    diffColor: "#f87171",
+    founded: "2023",
+    website: "myfundedfutures.com",
+    highlight: "Real capital (not simulated)",
+    payoutSplit: "80% → 90%",
+    payoutSpeed: "3-5 days",
+    evalSteps: "1 or 2-Step",
+    maxFunding: "$200K",
+    monthly: "$149 (50K)",
+    platforms: ["NinjaTrader","Tradovate"],
+    pros: [
+      "Real capital — not simulated accounts",
+      "Psychological edge for some traders",
+      "1-step or 2-step options",
+      "Competitive pricing",
+    ],
+    cons: [
+      "Payout complaints increased in 2024-25",
+      "Tighter rules & harder to get funded",
+      "40% consistency rule",
+      "Less transparent than newer firms",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "EOD trailing", warn: false },
+      { label: "Daily Loss Limit", value: "Yes", warn: true },
+      { label: "Overnight Holds", value: "Restricted", warn: true },
+      { label: "News Trading", value: "Restricted", warn: true },
+      { label: "Consistency Rule", value: "40%", warn: true },
+      { label: "EA / Bots", value: "Case by case", warn: true },
+    ],
+    bestFor: "Traders who want real capital",
+    color: "#a78bfa",
+  },
+  {
+    id: "takeprofittrader",
+    name: "TakeProfitTrader",
+    emoji: "🎯",
+    tagline: "Veteran-run. Consistent. Trusted.",
+    rating: 4.5,
+    trustpilot: "4.5/5",
+    difficulty: "Medium",
+    diffColor: "#fbbf24",
+    founded: "2021",
+    website: "takeprofittrader.com",
+    highlight: "No consistency rule",
+    payoutSplit: "80/20",
+    payoutSpeed: "5-7 days",
+    evalSteps: "1-Step",
+    maxFunding: "$150K",
+    monthly: "~$170 (50K)",
+    platforms: ["NinjaTrader","Tradovate","Rithmic"],
+    pros: [
+      "No consistency rule at all",
+      "Veteran-owned, very stable",
+      "No daily drawdown limit",
+      "Simple, clean rules",
+    ],
+    cons: [
+      "80/20 split — lower than top competitors",
+      "No overnight holds",
+      "Slower payouts than Lucid",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "Trailing (no daily limit)", warn: false },
+      { label: "Daily Loss Limit", value: "None", warn: false },
+      { label: "Overnight Holds", value: "Not allowed", warn: true },
+      { label: "News Trading", value: "Allowed", warn: false },
+      { label: "Consistency Rule", value: "None — biggest advantage", warn: false },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "Traders who hate consistency rules",
+    color: "#f59e0b",
+  },
+  {
+    id: "tradeify",
+    name: "Tradeify",
+    emoji: "🔥",
+    tagline: "Rising star. 90/10 on live capital.",
+    rating: 4.6,
+    trustpilot: "4.6/5",
+    difficulty: "Easy",
+    diffColor: "#34d399",
+    founded: "2024",
+    website: "tradeify.com",
+    highlight: "90/10 on live funded account",
+    payoutSplit: "90/10 on live capital",
+    payoutSpeed: "3-5 days",
+    evalSteps: "1-Step",
+    maxFunding: "$150K",
+    monthly: "One-time fee",
+    platforms: ["NinjaTrader","Tradovate","Rithmic"],
+    pros: [
+      "90/10 maintained on live capital (rare)",
+      "One-time fee only",
+      "Simple, trader-friendly rules",
+      "Fast growing, high trust score",
+    ],
+    cons: [
+      "Founded 2024 — still young",
+      "Smaller community than Apex/Topstep",
+      "No overnight holds on evaluation",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "EOD trailing", warn: false },
+      { label: "Daily Loss Limit", value: "Yes", warn: true },
+      { label: "Overnight Holds", value: "Evaluation: No | Funded: Yes", warn: false },
+      { label: "News Trading", value: "Allowed", warn: false },
+      { label: "Consistency Rule", value: "None on funded", warn: false },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "Traders wanting best live split",
+    color: "#ec4899",
+  },
+  {
+    id: "alphafutures",
+    name: "Alpha Futures",
+    emoji: "🌟",
+    tagline: "Highest Trustpilot. Most forgiving drawdown.",
+    rating: 4.9,
+    trustpilot: "4.9/5 (3.6K+ reviews)",
+    difficulty: "Easy",
+    diffColor: "#34d399",
+    founded: "2023",
+    website: "alphafutures.com",
+    highlight: "Highest-rated on Trustpilot",
+    payoutSplit: "90/10",
+    payoutSpeed: "48 business hours",
+    evalSteps: "1-Step",
+    maxFunding: "$200K",
+    monthly: "One-time fee",
+    platforms: ["NinjaTrader","Tradovate","TradingView","Rithmic"],
+    pros: [
+      "4.9/5 Trustpilot — industry's highest",
+      "48-hour payouts",
+      "Zero consistency rule on qualified accounts",
+      "Zero news restrictions on Advanced plan",
+      "Most forgiving drawdown structure",
+    ],
+    cons: [
+      "Less well-known than Apex/Topstep",
+      "Newer firm (2023)",
+      "Smaller community",
+    ],
+    rules: [
+      { label: "Drawdown Type", value: "EOD trailing (very forgiving)", warn: false },
+      { label: "Daily Loss Limit", value: "Depends on plan", warn: false },
+      { label: "Overnight Holds", value: "Allowed on Advanced plan", warn: false },
+      { label: "News Trading", value: "Allowed on Advanced plan", warn: false },
+      { label: "Consistency Rule", value: "None on qualified accounts", warn: false },
+      { label: "EA / Bots", value: "Allowed", warn: false },
+    ],
+    bestFor: "Traders wanting maximum flexibility",
+    color: "#fbbf24",
+  },
+];
 
-  const [rules, setRules] = useState([]);
-  const [checklist, setChecklist] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [newRuleTitle, setNewRuleTitle] = useState("");
-  const [newRuleDesc, setNewRuleDesc] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
+function StarRating({ rating }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+      {[1,2,3,4,5].map(i => (
+        <div key={i} style={{
+          width: 8, height: 8, borderRadius: "50%",
+          background: i <= Math.round(rating) ? "#fbbf24" : "rgba(255,255,255,0.12)",
+          boxShadow: i <= Math.round(rating) ? "0 0 4px rgba(251,191,36,0.5)" : "none",
+        }} />
+      ))}
+      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontFamily: "monospace", marginLeft: 3 }}>{rating}</span>
+    </div>
+  );
+}
 
-  // Load rules + today checklist
-  useEffect(() => {
-    if (!user) return;
-    Promise.all([
-      supabase.from("trading_rules").select("*").eq("user_id", user.id).eq("is_active", true).order("created_at"),
-      supabase.from("daily_checklist").select("*").eq("user_id", user.id).eq("date_key", todayKey),
-    ]).then(([{ data: rulesData }, { data: checkData }]) => {
-      setRules(rulesData || []);
-      const map = {};
-      (checkData || []).forEach(c => { map[c.rule_id] = c.checked; });
-      setChecklist(map);
-      setLoading(false);
-    });
-  }, [user]);
+function PropFirmCard({ firm, isExpanded, onToggle }) {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        backdropFilter: "blur(20px)",
+        border: `1px solid ${isExpanded ? firm.color + "55" : "rgba(255,255,255,0.08)"}`,
+        borderRadius: 20,
+        overflow: "hidden",
+        boxShadow: isExpanded ? `0 0 24px ${firm.color}18` : "none",
+        transition: "border-color 0.3s, box-shadow 0.3s",
+      }}
+    >
+      {/* Header — always visible */}
+      <motion.button whileTap={{ scale: 0.99 }} onClick={onToggle}
+        style={{ width: "100%", padding: "16px 18px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+            background: `linear-gradient(135deg, ${firm.color}33, ${firm.color}11)`,
+            border: `1px solid ${firm.color}44`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 22,
+          }}>{firm.emoji}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>{firm.name}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "monospace", marginTop: 2 }}>{firm.tagline}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 5 }}>
+              <StarRating rating={firm.rating} />
+              <span style={{ fontSize: 8, color: "rgba(255,255,255,0.25)", fontFamily: "monospace" }}>{firm.trustpilot}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+            <span style={{
+              fontSize: 9, fontFamily: "monospace", fontWeight: 700, padding: "3px 8px", borderRadius: 6,
+              background: `${firm.diffColor}22`, color: firm.diffColor,
+              border: `1px solid ${firm.diffColor}44`,
+            }}>{firm.difficulty}</span>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>{isExpanded ? "▲" : "▶"}</span>
+          </div>
+        </div>
+      </motion.button>
 
-  // Weekly score: last 7 days
-  const [weekScore, setWeekScore] = useState(null);
-  useEffect(() => {
-    if (!user || rules.length === 0) return;
-    const keys = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      keys.push(toKey(d.getFullYear(), d.getMonth(), d.getDate()));
-    }
-    supabase.from("daily_checklist")
-      .select("*")
-      .eq("user_id", user.id)
-      .in("date_key", keys)
-      .then(({ data }) => {
-        if (!data || data.length === 0) { setWeekScore(0); return; }
-        const checked = data.filter(c => c.checked).length;
-        const total = rules.length * 7;
-        setWeekScore(total > 0 ? Math.round((checked / total) * 100) : 0);
-      });
-  }, [user, rules]);
+      {/* Expanded detail */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ padding: "0 18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
 
-  const toggleCheck = async (ruleId) => {
-    const newVal = !checklist[ruleId];
-    setChecklist(prev => ({ ...prev, [ruleId]: newVal }));
-    await supabase.from("daily_checklist").upsert({
-      user_id: user.id,
-      date_key: todayKey,
-      rule_id: ruleId,
-      checked: newVal,
-    }, { onConflict: "user_id,date_key,rule_id" });
-  };
+              {/* Key stats grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {[
+                  { label: "PAYOUT SPLIT", value: firm.payoutSplit },
+                  { label: "PAYOUT SPEED", value: firm.payoutSpeed },
+                  { label: "EVAL STEPS", value: firm.evalSteps },
+                  { label: "MAX FUNDING", value: firm.maxFunding },
+                  { label: "MONTHLY FEE", value: firm.monthly },
+                  { label: "FOUNDED", value: firm.founded },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "10px 12px",
+                    border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ fontSize: 7, color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em", fontFamily: "monospace", marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "white", fontFamily: "monospace", lineHeight: 1.3 }}>{value}</div>
+                  </div>
+                ))}
+              </div>
 
-  const addRule = async () => {
-    if (!newRuleTitle.trim()) return;
-    setAdding(true);
-    const { data, error } = await supabase.from("trading_rules").insert({
-      user_id: user.id,
-      title: newRuleTitle.trim(),
-      description: newRuleDesc.trim() || null,
-    }).select().single();
-    if (!error && data) {
-      setRules(prev => [...prev, data]);
-      setNewRuleTitle(""); setNewRuleDesc(""); setShowAdd(false);
-    }
-    setAdding(false);
-  };
+              {/* Highlight badge */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
+                background: `${firm.color}15`, borderRadius: 12, border: `1px solid ${firm.color}33` }}>
+                <span style={{ fontSize: 16 }}>⭐</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: firm.color, fontFamily: "monospace" }}>{firm.highlight}</span>
+              </div>
 
-  const deleteRule = async (id) => {
-    await supabase.from("trading_rules").update({ is_active: false }).eq("id", id);
-    setRules(prev => prev.filter(r => r.id !== id));
-  };
+              {/* Rules table */}
+              <div>
+                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.28)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 8 }}>KEY RULES</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {firm.rules.map((rule, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                      padding: "8px 12px", borderRadius: 10,
+                      background: rule.warn ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${rule.warn ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)"}` }}>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>{rule.label}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, fontFamily: "monospace",
+                        color: rule.warn ? "#f87171" : "#34d399" }}>{rule.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-  const checkedToday = rules.filter(r => checklist[r.id]).length;
-  const totalRules = rules.length;
-  const todayPct = totalRules > 0 ? Math.round((checkedToday / totalRules) * 100) : 0;
+              {/* Pros & Cons */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <div>
+                  <div style={{ fontSize: 8, color: "#34d399", letterSpacing: "0.1em", fontFamily: "monospace", marginBottom: 6 }}>✓ PROS</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {firm.pros.map((p, i) => (
+                      <div key={i} style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", fontFamily: "monospace", lineHeight: 1.4,
+                        paddingLeft: 8, borderLeft: "2px solid rgba(52,211,153,0.3)" }}>{p}</div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 8, color: "#f87171", letterSpacing: "0.1em", fontFamily: "monospace", marginBottom: 6 }}>✗ CONS</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {firm.cons.map((c, i) => (
+                      <div key={i} style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", fontFamily: "monospace", lineHeight: 1.4,
+                        paddingLeft: 8, borderLeft: "2px solid rgba(248,113,113,0.3)" }}>{c}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-  const dayNames = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+              {/* Best for */}
+              <div style={{ textAlign: "center", padding: "10px", background: `${firm.color}11`,
+                borderRadius: 12, border: `1px solid ${firm.color}33` }}>
+                <span style={{ fontSize: 10, color: firm.color, fontFamily: "monospace", fontWeight: 700 }}>
+                  🎯 Best for: {firm.bestFor}
+                </span>
+              </div>
+
+              {/* Platforms */}
+              <div>
+                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em", fontFamily: "monospace", marginBottom: 6 }}>PLATFORMS</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {firm.platforms.map(p => (
+                    <span key={p} style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, fontFamily: "monospace",
+                      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.5)" }}>{p}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function PropFirmTab() {
+  const [expanded, setExpanded] = useState(null);
+  const [filter, setFilter] = useState("all"); // all | easy | medium | hard
+
+  const filtered = filter === "all" ? PROP_FIRMS_DATA
+    : PROP_FIRMS_DATA.filter(f => f.difficulty.toLowerCase() === filter);
 
   return (
     <div style={{ minHeight: "100vh", position: "relative" }}>
@@ -1518,184 +2241,52 @@ function RegelnTab({ user }) {
       <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top,20px) 14px 100px" }}>
 
         {/* Header */}
-        <div style={{ paddingTop: 16, marginBottom: 20 }}>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>DISZIPLIN</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>Regelwerk</div>
+        <div style={{ paddingTop: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>FUTURES</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>Prop Firms</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", marginTop: 4 }}>
+            Top 10 Futures Prop Firms — Rules, Pros & Cons
+          </div>
         </div>
 
-        {/* Weekly score */}
-        <div style={{
-          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
-          padding: "18px 18px 16px", marginBottom: 14,
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace" }}>7-TAGE DISZIPLIN-SCORE</div>
-            <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "monospace",
-              color: weekScore >= 80 ? "#34d399" : weekScore >= 50 ? "#fbbf24" : "#f87171" }}>
-              {weekScore !== null ? `${weekScore}%` : "—"}
-            </span>
-          </div>
-          <div style={{ height: 8, background: "rgba(255,255,255,0.07)", borderRadius: 99, overflow: "hidden" }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${weekScore || 0}%` }}
-              transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+        {/* Filter tabs */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+          {[["all","Alle"],["easy","Easy"],["medium","Medium"],["hard","Hard"]].map(([v,l]) => (
+            <motion.button key={v} whileTap={{ scale: 0.93 }} onClick={() => setFilter(v)}
               style={{
-                height: "100%", borderRadius: 99,
-                background: weekScore >= 80
-                  ? "linear-gradient(90deg,#059669,#34d399)"
-                  : weekScore >= 50
-                  ? "linear-gradient(90deg,#d97706,#fbbf24)"
-                  : "linear-gradient(90deg,#dc2626,#f87171)",
-                boxShadow: weekScore >= 80 ? "0 0 8px rgba(52,211,153,0.5)" : "none",
-              }}
+                padding: "6px 12px", borderRadius: 99, border: "none", cursor: "pointer", fontSize: 10, fontFamily: "monospace", fontWeight: 600,
+                background: filter === v ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.05)",
+                color: filter === v ? "white" : "rgba(255,255,255,0.35)",
+                border: filter === v ? "none" : "1px solid rgba(255,255,255,0.08)",
+                boxShadow: filter === v ? "0 0 12px rgba(99,102,241,0.3)" : "none",
+              }}>{l}</motion.button>
+          ))}
+        </div>
+
+        {/* Cards */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {filtered.map(firm => (
+            <PropFirmCard
+              key={firm.id}
+              firm={firm}
+              isExpanded={expanded === firm.id}
+              onToggle={() => setExpanded(expanded === firm.id ? null : firm.id)}
             />
-          </div>
-          {/* Day dots */}
-          <div style={{ display: "flex", gap: 6, marginTop: 10, justifyContent: "space-between" }}>
-            {Array.from({ length: 7 }, (_, i) => {
-              const d = new Date(); d.setDate(d.getDate() - (6 - i));
-              const isToday = i === 6;
-              return (
-                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%",
-                    background: isToday ? "#a78bfa" : "rgba(255,255,255,0.12)",
-                    boxShadow: isToday ? "0 0 6px rgba(167,139,250,0.6)" : "none" }} />
-                  <span style={{ fontSize: 7, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>
-                    {dayNames[d.getDay()]}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          ))}
         </div>
 
-        {/* Today checklist */}
-        <div style={{
-          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
-          padding: "18px 18px 14px", marginBottom: 14,
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace" }}>HEUTE CHECKLISTE</div>
-            <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700,
-              color: todayPct === 100 ? "#34d399" : "rgba(255,255,255,0.4)" }}>
-              {checkedToday}/{totalRules}
-              {todayPct === 100 && " 🎯"}
-            </span>
+        {/* Disclaimer */}
+        <div style={{ marginTop: 20, padding: "12px 16px", background: "rgba(255,255,255,0.03)",
+          borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: "monospace", lineHeight: 1.6, textAlign: "center" }}>
+            ⚠ Rules & pricing change frequently. Always verify on the firm's official website before signing up. Data based on research as of May 2026.
           </div>
-
-          {loading ? (
-            <div style={{ textAlign: "center", padding: "20px 0", color: "rgba(255,255,255,0.2)", fontFamily: "monospace", fontSize: 12 }}>Laden...</div>
-          ) : rules.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "20px 0", color: "rgba(255,255,255,0.2)", fontFamily: "monospace", fontSize: 12 }}>
-              Noch keine Regeln. Füge deine erste Regel hinzu ↓
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {rules.map((rule, i) => {
-                const isChecked = !!checklist[rule.id];
-                return (
-                  <motion.div key={rule.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    style={{ display: "flex", alignItems: "center", gap: 12,
-                      padding: "12px 14px", borderRadius: 14,
-                      background: isChecked ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${isChecked ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.07)"}`,
-                      transition: "all 0.25s",
-                    }}>
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => toggleCheck(rule.id)}
-                      style={{
-                        width: 26, height: 26, borderRadius: 8, border: "none", cursor: "pointer", flexShrink: 0,
-                        background: isChecked ? "linear-gradient(135deg,#059669,#10b981)" : "rgba(255,255,255,0.08)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: isChecked ? "0 0 10px rgba(16,185,129,0.4)" : "none",
-                        fontSize: 13, transition: "all 0.2s",
-                      }}>
-                      {isChecked ? "✓" : ""}
-                    </motion.button>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: isChecked ? "rgba(255,255,255,0.7)" : "white",
-                        fontFamily: "monospace", textDecoration: isChecked ? "line-through" : "none",
-                        transition: "all 0.2s" }}>{rule.title}</div>
-                      {rule.description && (
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2, fontFamily: "monospace" }}>{rule.description}</div>
-                      )}
-                    </div>
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => deleteRule(rule.id)}
-                      style={{ background: "none", border: "none", cursor: "pointer",
-                        color: "rgba(255,255,255,0.15)", fontSize: 14, padding: "4px" }}>
-                      ✕
-                    </motion.button>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Add rule */}
-        <div style={{
-          background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20,
-          overflow: "hidden",
-        }}>
-          <motion.button whileTap={{ scale: 0.98 }} onClick={() => setShowAdd(v => !v)}
-            style={{
-              width: "100%", padding: "16px 18px", background: "none", border: "none",
-              display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
-            }}>
-            <span style={{ fontSize: 18 }}>➕</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "white", fontFamily: "monospace" }}>Neue Regel hinzufügen</span>
-            <span style={{ marginLeft: "auto", color: "rgba(255,255,255,0.3)", fontSize: 14 }}>{showAdd ? "▲" : "▶"}</span>
-          </motion.button>
-          <AnimatePresence>
-            {showAdd && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}
-              >
-                <div style={{ padding: "0 18px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
-                  <input
-                    placeholder="Regelname (z.B. Max 2 Trades pro Tag)"
-                    value={newRuleTitle} onChange={e => setNewRuleTitle(e.target.value)}
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: 10, padding: "12px 14px", color: "white", fontSize: 13,
-                      fontFamily: "monospace", outline: "none", boxSizing: "border-box", width: "100%" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(139,92,246,0.5)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
-                  />
-                  <input
-                    placeholder="Beschreibung (optional)"
-                    value={newRuleDesc} onChange={e => setNewRuleDesc(e.target.value)}
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: 10, padding: "11px 14px", color: "white", fontSize: 12,
-                      fontFamily: "monospace", outline: "none", boxSizing: "border-box", width: "100%" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(139,92,246,0.5)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
-                  />
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={addRule} disabled={adding || !newRuleTitle.trim()}
-                    style={{
-                      padding: "12px", borderRadius: 10, border: "none",
-                      background: newRuleTitle.trim() ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.05)",
-                      color: newRuleTitle.trim() ? "white" : "rgba(255,255,255,0.2)",
-                      fontSize: 13, fontWeight: 700, cursor: newRuleTitle.trim() ? "pointer" : "not-allowed",
-                      fontFamily: "monospace", transition: "all 0.2s",
-                    }}>
-                    {adding ? "Speichern..." : "Regel speichern"}
-                  </motion.button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
     </div>
   );
 }
+
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
@@ -1742,6 +2333,7 @@ export default function App() {
       {!user ? (
         <AuthScreen onAuth={setUser} />
       ) : (
+        <LangProvider>
         <PnLProvider user={user}>
           <AnimatePresence mode="wait">
             {tab === "calendar" && (
@@ -1754,9 +2346,9 @@ export default function App() {
                 <StatsTab yr={yr} mo={mo} setYr={setYr} setMo={setMo} />
               </motion.div>
             )}
-            {tab === "regeln" && (
-              <motion.div key="regeln" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
-                <RegelnTab user={user} />
+            {tab === "propfirm" && (
+              <motion.div key="propfirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
+                <PropFirmTab />
               </motion.div>
             )}
             {tab === "profile" && (
@@ -1767,6 +2359,7 @@ export default function App() {
           </AnimatePresence>
           <BottomNav tab={tab} setTab={setTab} />
         </PnLProvider>
+        </LangProvider>
       )}
     </>
   );
