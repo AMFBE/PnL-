@@ -243,7 +243,11 @@ function LangProvider({ children }) {
   };
   return <LangContext.Provider value={{ lang, t, changeLang }}>{children}</LangContext.Provider>;
 }
-function useLang() { return useContext(LangContext); }
+function useLang() {
+  const ctx = useContext(LangContext);
+  if (!ctx) return { lang: "de", t: TRANSLATIONS.de, changeLang: () => {} };
+  return ctx;
+}
 
 // ─── PNL CONTEXT ──────────────────────────────────────────────────────────────
 const PnLContext = createContext(null);
@@ -688,13 +692,7 @@ const CalendarCell = memo(function CalendarCell({ day, month, year, index, onOpe
 });
 
 // ─── INPUT MODAL ──────────────────────────────────────────────────────────────
-const MOODS = [
-  { id: "calm",        emoji: "😌", label: "Ruhig" },
-  { id: "nervous",     emoji: "😰", label: "Nervös" },
-  { id: "overconf",    emoji: "🤑", label: "Overconfident" },
-  { id: "frustrated",  emoji: "😤", label: "Frustriert" },
-  { id: "focused",     emoji: "🎯", label: "Fokussiert" },
-];
+// MOODS labels are now translated inline using t.moodCalm etc.
 
 function InputModal({ day, month, year, onClose }) {
   const { getDay, saveDay } = usePnL();
@@ -727,8 +725,8 @@ function InputModal({ day, month, year, onClose }) {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center",
-        background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)" }}
+      style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "flex-end", justifyContent: "center",
+        background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
       onClick={onClose}
     >
       <motion.div
@@ -739,14 +737,15 @@ function InputModal({ day, month, year, onClose }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 500,
-          background: "rgba(6,10,30,0.97)", backdropFilter: "blur(40px) saturate(2)",
+          background: "rgba(6,10,30,0.98)", backdropFilter: "blur(40px) saturate(2)",
           WebkitBackdropFilter: "blur(40px) saturate(2)",
           border: "1px solid rgba(255,255,255,0.11)",
           borderRadius: "26px 26px 0 0",
           padding: "16px 20px max(env(safe-area-inset-bottom, 24px), 24px)",
-          boxShadow: "0 -12px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)",
-          maxHeight: "92vh", overflowY: "scroll",
+          boxShadow: "0 -12px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08)",
+          maxHeight: "92vh", overflowY: "auto",
           WebkitOverflowScrolling: "touch",
+          position: "relative", zIndex: 501,
         }}
       >
         {/* Drag indicator */}
@@ -756,7 +755,7 @@ function InputModal({ day, month, year, onClose }) {
 
         {/* Header */}
         <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", fontFamily: "monospace", marginBottom: 4 }}>TAGESEINTRAG</div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", fontFamily: "monospace", marginBottom: 4 }}>{t.tradeEntry}</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>
             {day}. {MONTHS[month]} {year}
           </div>
@@ -799,7 +798,7 @@ function InputModal({ day, month, year, onClose }) {
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 12 }}>PLAN-ADHERENCE</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 12 }}>{t.planAdherence}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <motion.button onClick={() => setAdherence(v => !v)} whileTap={{ scale: 0.9 }}
                   animate={{ background: adherence ? "linear-gradient(135deg,#059669,#10b981)" : "rgba(255,255,255,0.08)" }}
@@ -813,7 +812,7 @@ function InputModal({ day, month, year, onClose }) {
                 </motion.button>
                 <motion.span animate={{ color: adherence ? "#10b981" : "rgba(255,255,255,0.3)" }}
                   style={{ fontSize: 14, fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
-                  {adherence ? "Plan befolgt ✓" : "Nicht befolgt"}
+                  {adherence ? t.planFollowed : t.notFollowed}
                 </motion.span>
               </div>
             </div>
@@ -825,9 +824,17 @@ function InputModal({ day, month, year, onClose }) {
           <>
             {/* Mood */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 12 }}>STIMMUNG</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 12 }}>{t.mood}</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {MOODS.map(m => (
+                {[
+                    { id:"calm", emoji:"😌" },
+                    { id:"nervous", emoji:"😰" },
+                    { id:"overconf", emoji:"🤑" },
+                    { id:"frustrated", emoji:"😤" },
+                    { id:"focused", emoji:"🎯" },
+                  ].map(m => {
+                    const moodLabels = { calm:t.moodCalm, nervous:t.moodNervous, overconf:t.moodOverconf, frustrated:t.moodFrustrated, focused:t.moodFocused };
+                    return (
                   <motion.button key={m.id} onClick={() => setMood(v => v === m.id ? "" : m.id)}
                     whileTap={{ scale: 0.9 }}
                     style={{
@@ -839,17 +846,18 @@ function InputModal({ day, month, year, onClose }) {
                       transition: "all 0.2s",
                     }}>
                     <span style={{ fontSize: 22 }}>{m.emoji}</span>
-                    <span style={{ fontSize: 8, color: mood === m.id ? "#a78bfa" : "rgba(255,255,255,0.3)", fontFamily: "monospace", letterSpacing: "0.05em" }}>{m.label}</span>
+                    <span style={{ fontSize: 8, color: mood === m.id ? "#a78bfa" : "rgba(255,255,255,0.3)", fontFamily: "monospace", letterSpacing: "0.05em" }}>{moodLabels[m.id]}</span>
                   </motion.button>
-                ))}
+                    );
+                  })}
               </div>
             </div>
 
             {/* Note */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 8 }}>NOTIZEN</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 8 }}>{t.notes}</div>
               <textarea value={note} onChange={e => setNote(e.target.value)}
-                placeholder="Was lief gut? Was lief schlecht? Welche Fehler?"
+                placeholder={t.notesPlaceholder}
                 rows={4}
                 style={{
                   width: "100%", boxSizing: "border-box",
@@ -873,7 +881,7 @@ function InputModal({ day, month, year, onClose }) {
             flex: 1, padding: 13, borderRadius: 13, cursor: "pointer", fontSize: 13, fontWeight: 600,
             background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)",
             color: "rgba(255,255,255,0.45)", fontFamily: "monospace",
-          }}>Abbrechen</button>
+          }}>{t.cancel}</button>
           <motion.button onClick={handleSave} disabled={saving} whileTap={{ scale: 0.96 }}
             style={{
               flex: 2, padding: 13, borderRadius: 13, border: "none", cursor: saving ? "wait" : "pointer",
@@ -883,7 +891,7 @@ function InputModal({ day, month, year, onClose }) {
               boxShadow: saved ? "0 0 22px rgba(16,185,129,0.45)" : "0 0 16px rgba(99,102,241,0.35)",
               transition: "background 0.4s, box-shadow 0.4s",
             }}>
-            {saving ? "Speichern..." : saved ? "✓ Gespeichert" : "Speichern"}
+            {saving ? t.saving : saved ? t.saved : t.save}
           </motion.button>
         </div>
 
@@ -896,7 +904,7 @@ function InputModal({ day, month, year, onClose }) {
               cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "monospace",
               color: confirmDelete ? "#f87171" : "rgba(255,255,255,0.25)",
             }}>
-            {confirmDelete ? "⚠ Nochmal tippen zum Bestätigen" : "🗑 Eintrag löschen"}
+            {confirmDelete ? t.confirmDelete : t.deleteEntry}
           </motion.button>
         )}
       </motion.div>
@@ -907,6 +915,7 @@ function InputModal({ day, month, year, onClose }) {
 // ─── MAIN CALENDAR ─────────────────────────────────────────────────────────────
 function Calendar({ yr, mo, setYr, setMo, user }) {
   const { data, loading, saveError } = usePnL();
+  const { t } = useLang();
   const [modalDay, setModalDay] = useState(null);
   const [navDir, setNavDir] = useState(1);
   const [calKey, setCalKey] = useState(0);
@@ -948,7 +957,7 @@ function Calendar({ yr, mo, setYr, setMo, user }) {
 
         {/* Header */}
         <div style={{ paddingTop: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>TRADING JOURNAL</div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>{t.appTitle}</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
             {MONTHS[mo]} <span style={{ color: "rgba(255,255,255,0.22)", fontSize: 20 }}>{yr}</span>
           </div>
@@ -956,8 +965,8 @@ function Calendar({ yr, mo, setYr, setMo, user }) {
 
         {/* Header row 2: Stats */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          <StatPill label="Monats-PnL" value={fmt(totalPnL) || "—"} color={totalPnL >= 0 ? "#34d399" : "#f87171"} />
-          <StatPill label="Disziplin" value={`${adherencePct}%`} color="#a78bfa" />
+          <StatPill label={t.monthlyPnL} value={fmt(totalPnL) || "—"} color={totalPnL >= 0 ? "#34d399" : "#f87171"} />
+          <StatPill label={t.discipline} value={`${adherencePct}%`} color="#a78bfa" />
         </div>
 
         {/* Month nav with mini target bar */}
@@ -1017,7 +1026,7 @@ function Calendar({ yr, mo, setYr, setMo, user }) {
               style={{ width: 28, height: 28, border: "2px solid rgba(255,255,255,0.08)", borderTop: "2px solid #a78bfa", borderRadius: "50%" }} />
           </div>
         ) : (
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div key={calKey}
               initial={{ opacity: 0, x: navDir * 28 }}
               animate={{ opacity: 1, x: 0 }}
@@ -1036,8 +1045,8 @@ function Calendar({ yr, mo, setYr, setMo, user }) {
 
         <div style={{ display: "flex", gap: 20, marginTop: 22, justifyContent: "center" }}>
           {[
-            { color: "#10b981", label: "Plan befolgt", icon: "dot" },
-            { color: "#ef4444", label: "Plan nicht befolgt", icon: "cross" },
+            { color: "#10b981", label: t.planFollowed, icon: "dot" },
+            { color: "#ef4444", label: t.notFollowed, icon: "cross" },
             { color: "rgba(255,255,255,0.14)", label: "Keine Daten", icon: "dot" },
           ].map(({ color, label, icon }) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -1104,6 +1113,138 @@ function NavBtn({ onClick, children }) {
   );
 }
 
+
+// ─── CUMULATIVE CHART (touch scrubbing) ───────────────────────────────────────
+function CumulativeChart({ chartData, cumPoints, linePath, areaPath, lineColor,
+  totalPnL, minCum, maxCumRaw, zeroY, H, W, mo, daysInMonth, fmtShort, t }) {
+
+  const svgRef = useRef(null);
+  const [scrubIdx, setScrubIdx] = useState(null);
+  const scrubbing = scrubIdx !== null;
+
+  const displayValue = scrubIdx !== null
+    ? chartData[scrubIdx]?.cumulative ?? totalPnL
+    : totalPnL;
+
+  const displayDay = scrubIdx !== null ? scrubIdx + 1 : null;
+  const displayColor = displayValue >= 0 ? "#34d399" : "#f87171";
+
+  const getIdxFromX = (clientX, rect) => {
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return Math.min(daysInMonth - 1, Math.round(pct * (daysInMonth - 1)));
+  };
+
+  const handleMove = (e) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    setScrubIdx(getIdxFromX(clientX, rect));
+  };
+
+  const handleEnd = () => setScrubIdx(null);
+
+  // Scrub dot position
+  const scrubPoint = scrubIdx !== null ? cumPoints[scrubIdx] : null;
+
+  return (
+    <div style={{ background:"rgba(255,255,255,0.04)", backdropFilter:"blur(20px)",
+      border:"1px solid rgba(255,255,255,0.09)", borderRadius:20, padding:"16px 14px 12px" }}>
+
+      {/* Header with animated value */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <div>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.12em", fontFamily:"monospace" }}>{t.cumulativeGain}</div>
+          {displayDay && (
+            <div style={{ fontSize:8, color:"rgba(255,255,255,0.25)", fontFamily:"monospace", marginTop:2 }}>
+              {displayDay}. {MONTHS[mo].slice(0,3)}
+            </div>
+          )}
+        </div>
+        <motion.span
+          key={displayValue}
+          initial={{ opacity: 0.6, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.08 }}
+          style={{ fontSize: scrubbing ? 18 : 13, fontWeight:800, fontFamily:"monospace",
+            color: displayColor, transition: "font-size 0.15s" }}>
+          {fmtShort(displayValue)}€
+        </motion.span>
+      </div>
+
+      {/* SVG with touch handlers */}
+      <div style={{ position: "relative", touchAction: "pan-y" }}>
+        <svg
+          ref={svgRef}
+          width="100%" height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          style={{ display:"block", overflow:"visible", cursor:"crosshair" }}
+          onMouseMove={handleMove}
+          onMouseLeave={handleEnd}
+          onTouchMove={handleMove}
+          onTouchEnd={handleEnd}
+        >
+          <defs>
+            <linearGradient id="cumGrad2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={totalPnL>=0?"rgba(52,211,153,0.3)":"rgba(248,113,113,0.3)"} />
+              <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+            </linearGradient>
+            <filter id="glow2">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          {/* Grid lines */}
+          {[0.25,0.5,0.75].map(f => (
+            <line key={f} x1={0} y1={H*f} x2={W} y2={H*f} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+          ))}
+          {/* Zero line */}
+          {minCum < 0 && maxCumRaw > 0 && (
+            <line x1={0} y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.15)" strokeWidth="0.8" strokeDasharray="4,4" />
+          )}
+          {/* Area */}
+          {cumPoints.length > 1 && <path d={areaPath} fill="url(#cumGrad2)" />}
+          {/* Line */}
+          {cumPoints.length > 1 && (
+            <path d={linePath} fill="none" stroke={scrubbing ? "rgba(255,255,255,0.4)" : lineColor}
+              strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" filter="url(#glow2)"
+              style={{ transition: "stroke 0.1s" }} />
+          )}
+          {/* Data dots */}
+          {!scrubbing && cumPoints.filter(p => p.hasData).map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r="2"
+              fill={p.pnl>=0?"#34d399":"#f87171"}
+              style={{ filter:`drop-shadow(0 0 3px ${p.pnl>=0?"#34d399":"#f87171"})` }}
+            />
+          ))}
+          {/* Scrub vertical line */}
+          {scrubPoint && (
+            <>
+              <line x1={scrubPoint.x} y1={0} x2={scrubPoint.x} y2={H}
+                stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="3,3" />
+              <circle cx={scrubPoint.x} cy={scrubPoint.y} r="5"
+                fill={displayColor} stroke="rgba(0,0,0,0.5)" strokeWidth="1.5"
+                style={{ filter:`drop-shadow(0 0 8px ${displayColor})` }} />
+            </>
+          )}
+          {/* End dot (no scrub) */}
+          {!scrubbing && cumPoints.length > 0 && (() => {
+            const last = [...cumPoints].filter(p=>p.hasData).slice(-1)[0];
+            if (!last) return null;
+            return <circle cx={last.x} cy={last.y} r="4" fill={lineColor}
+              style={{ filter:`drop-shadow(0 0 6px ${lineColor})` }} />;
+          })()}
+        </svg>
+      </div>
+
+      <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+        <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>1. {MONTHS[mo].slice(0,3)}</span>
+        <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>{daysInMonth}. {MONTHS[mo].slice(0,3)}</span>
+      </div>
+    </div>
+  );
+}
 
 // ─── STATS TAB ────────────────────────────────────────────────────────────────
 function StatsTab({ yr, mo, setYr, setMo }) {
@@ -1333,61 +1474,14 @@ function StatsTab({ yr, mo, setYr, setMo }) {
           </div>
         </div>
 
-        {/* Cumulative line chart - smooth bezier */}
-        <div style={{ background:"rgba(255,255,255,0.04)", backdropFilter:"blur(20px)",
-          border:"1px solid rgba(255,255,255,0.09)", borderRadius:20, padding:"16px 14px 12px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-            <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.12em", fontFamily:"monospace" }}>{t.cumulativeGain}</div>
-            <span style={{ fontSize:11, fontWeight:700, fontFamily:"monospace", color:lineColor }}>{fmtShort(totalPnL)}€</span>
-          </div>
-          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display:"block", overflow:"visible" }}>
-            <defs>
-              <linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={totalPnL>=0?"rgba(52,211,153,0.3)":"rgba(248,113,113,0.3)"} />
-                <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-              </linearGradient>
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="2" result="blur"/>
-                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-              </filter>
-            </defs>
-            {/* Grid lines */}
-            {[0.25,0.5,0.75].map(f => (
-              <line key={f} x1={0} y1={H*f} x2={W} y2={H*f} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
-            ))}
-            {/* Zero line */}
-            {minCum < 0 && maxCumRaw > 0 && (
-              <line x1={0} y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.15)" strokeWidth="0.8" strokeDasharray="4,4" />
-            )}
-            {/* Area */}
-            {cumPoints.length > 1 && <path d={areaPath} fill="url(#cumGrad)" />}
-            {/* Line */}
-            {cumPoints.length > 1 && (
-              <path d={linePath} fill="none" stroke={lineColor} strokeWidth="2"
-                strokeLinejoin="round" strokeLinecap="round" filter="url(#glow)" />
-            )}
-            {/* Dots at data points */}
-            {cumPoints.filter(p => p.hasData).map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r="2"
-                fill={p.pnl>=0?"#34d399":"#f87171"}
-                style={{ filter:`drop-shadow(0 0 3px ${p.pnl>=0?"#34d399":"#f87171"})` }}
-              />
-            ))}
-            {/* End dot larger */}
-            {cumPoints.length > 0 && (() => {
-              const last = cumPoints[cumPoints.filter(p=>p.hasData).length > 0
-                ? cumPoints.map((p,i)=>({...p,i})).filter(p=>p.hasData).slice(-1)[0]?.i ?? cumPoints.length-1
-                : cumPoints.length-1];
-              if (!last) return null;
-              return <circle cx={last.x} cy={last.y} r="4" fill={lineColor}
-                style={{ filter:`drop-shadow(0 0 6px ${lineColor})` }} />;
-            })()}
-          </svg>
-          <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
-            <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>1. {MONTHS[mo].slice(0,3)}</span>
-            <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>{daysInMonth}. {MONTHS[mo].slice(0,3)}</span>
-          </div>
-        </div>
+        {/* Cumulative line chart — touch scrubbing */}
+        <CumulativeChart
+          chartData={chartData} cumPoints={cumPoints} linePath={linePath}
+          areaPath={areaPath} lineColor={lineColor} totalPnL={totalPnL}
+          minCum={minCum} maxCumRaw={maxCumRaw} zeroY={zeroY}
+          H={H} W={W} mo={mo} daysInMonth={daysInMonth}
+          fmtShort={fmtShort} t={t}
+        />
       </div>
     </div>
   );
@@ -1588,11 +1682,12 @@ function ProfileTab({ user, onLogout }) {
 
 // ─── BOTTOM NAV ────────────────────────────────────────────────────────────────
 function BottomNav({ tab, setTab }) {
+  const { t } = useLang();
   const tabs = [
-    { id: "calendar", icon: "📅", label: "Kalender" },
-    { id: "stats",    icon: "📊", label: "Stats" },
-    { id: "propfirm", icon: "🏦", label: "Prop Firm" },
-    { id: "profile",  icon: "👤", label: "Profil" },
+    { id: "calendar", icon: "📅", label: t.calendar },
+    { id: "stats",    icon: "📊", label: t.stats },
+    { id: "propfirm", icon: "🏦", label: t.propfirm },
+    { id: "profile",  icon: "👤", label: t.profile },
   ];
   return (
     <div style={{
@@ -2229,6 +2324,7 @@ function PropFirmCard({ firm, isExpanded, onToggle }) {
 }
 
 function PropFirmTab() {
+  const { t } = useLang();
   const [expanded, setExpanded] = useState(null);
   const [filter, setFilter] = useState("all"); // all | easy | medium | hard
 
@@ -2243,7 +2339,7 @@ function PropFirmTab() {
         {/* Header */}
         <div style={{ paddingTop: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", letterSpacing: "0.18em", fontFamily: "monospace" }}>FUTURES</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>Prop Firms</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "white", fontFamily: "'Playfair Display', serif" }}>{t.propFirmTitle}</div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", marginTop: 4 }}>
             Top 10 Futures Prop Firms — Rules, Pros & Cons
           </div>
@@ -2335,28 +2431,19 @@ export default function App() {
       ) : (
         <LangProvider>
         <PnLProvider user={user}>
-          <AnimatePresence mode="wait">
-            {tab === "calendar" && (
-              <motion.div key="cal" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.18 }}>
-                <Calendar yr={yr} mo={mo} setYr={setYr} setMo={setMo} user={user} />
-              </motion.div>
-            )}
-            {tab === "stats" && (
-              <motion.div key="stats" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
-                <StatsTab yr={yr} mo={mo} setYr={setYr} setMo={setMo} />
-              </motion.div>
-            )}
-            {tab === "propfirm" && (
-              <motion.div key="propfirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
-                <PropFirmTab />
-              </motion.div>
-            )}
-            {tab === "profile" && (
-              <motion.div key="profile" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.18 }}>
-                <ProfileTab user={user} onLogout={logout} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Tab content — no AnimatePresence to avoid white screen on modal open */}
+          <div style={{ display: tab === "calendar" ? "block" : "none" }}>
+            <Calendar yr={yr} mo={mo} setYr={setYr} setMo={setMo} user={user} />
+          </div>
+          <div style={{ display: tab === "stats" ? "block" : "none" }}>
+            <StatsTab yr={yr} mo={mo} setYr={setYr} setMo={setMo} />
+          </div>
+          <div style={{ display: tab === "propfirm" ? "block" : "none" }}>
+            <PropFirmTab />
+          </div>
+          <div style={{ display: tab === "profile" ? "block" : "none" }}>
+            <ProfileTab user={user} onLogout={logout} />
+          </div>
           <BottomNav tab={tab} setTab={setTab} />
         </PnLProvider>
         </LangProvider>
