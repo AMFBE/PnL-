@@ -245,7 +245,10 @@ function LangProvider({ children }) {
 }
 function useLang() {
   const ctx = useContext(LangContext);
-  if (!ctx) return { lang: "de", t: TRANSLATIONS.de, changeLang: () => {} };
+  if (!ctx) {
+    const saved = (() => { try { return localStorage.getItem("pnl_lang") || "de"; } catch { return "de"; } })();
+    return { lang: saved, t: TRANSLATIONS[saved] || TRANSLATIONS.de, changeLang: () => {} };
+  }
   return ctx;
 }
 
@@ -913,10 +916,9 @@ function InputModal({ day, month, year, onClose }) {
 }
 
 // ─── MAIN CALENDAR ─────────────────────────────────────────────────────────────
-function Calendar({ yr, mo, setYr, setMo, user }) {
+function Calendar({ yr, mo, setYr, setMo, user, modalDay, setModalDay }) {
   const { data, loading, saveError } = usePnL();
   const { t } = useLang();
-  const [modalDay, setModalDay] = useState(null);
   const [navDir, setNavDir] = useState(1);
   const [calKey, setCalKey] = useState(0);
 
@@ -1060,12 +1062,6 @@ function Calendar({ yr, mo, setYr, setMo, user }) {
           ))}
         </div>
       </div>
-
-      <AnimatePresence>
-        {modalDay !== null && (
-          <InputModal day={modalDay} month={mo} year={yr} onClose={() => setModalDay(null)} />
-        )}
-      </AnimatePresence>
 
       {/* Save error toast */}
       <AnimatePresence>
@@ -2404,6 +2400,7 @@ export default function App() {
   const today = new Date();
   const [yr, setYr] = useState(today.getFullYear());
   const [mo, setMo] = useState(today.getMonth());
+  const [modalDay, setModalDay] = useState(null);
   const logout = async () => { await supabase.auth.signOut(); setUser(null); };
 
   if (checking) return (
@@ -2433,7 +2430,7 @@ export default function App() {
         <PnLProvider user={user}>
           {/* Tab content — no AnimatePresence to avoid white screen on modal open */}
           <div style={{ display: tab === "calendar" ? "block" : "none" }}>
-            <Calendar yr={yr} mo={mo} setYr={setYr} setMo={setMo} user={user} />
+            <Calendar yr={yr} mo={mo} setYr={setYr} setMo={setMo} user={user} modalDay={modalDay} setModalDay={setModalDay} />
           </div>
           <div style={{ display: tab === "stats" ? "block" : "none" }}>
             <StatsTab yr={yr} mo={mo} setYr={setYr} setMo={setMo} />
@@ -2445,6 +2442,12 @@ export default function App() {
             <ProfileTab user={user} onLogout={logout} />
           </div>
           <BottomNav tab={tab} setTab={setTab} />
+          {/* Modal lives outside tab system — never affected by display:none */}
+          <AnimatePresence>
+            {modalDay !== null && (
+              <InputModal day={modalDay} month={mo} year={yr} onClose={() => setModalDay(null)} />
+            )}
+          </AnimatePresence>
         </PnLProvider>
         </LangProvider>
       )}
