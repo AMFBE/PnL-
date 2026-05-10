@@ -770,10 +770,10 @@ function InputModal({ day, month, year, onClose }) {
             <motion.button key={id} onClick={() => setModalTab(id)} whileTap={{ scale: 0.97 }}
               style={{
                 flex: 1, padding: "9px 0", borderRadius: 10, border: "none", cursor: "pointer",
-                background: tab === id ? "rgba(139,92,246,0.25)" : "transparent",
-                color: tab === id ? "#a78bfa" : "rgba(255,255,255,0.35)",
+                background: modalTab === id ? "rgba(139,92,246,0.25)" : "transparent",
+                color: modalTab === id ? "#a78bfa" : "rgba(255,255,255,0.35)",
                 fontSize: 12, fontWeight: 700, fontFamily: "monospace",
-                boxShadow: tab === id ? "inset 0 0 8px rgba(139,92,246,0.15)" : "none",
+                boxShadow: modalTab === id ? "inset 0 0 8px rgba(139,92,246,0.15)" : "none",
                 transition: "all 0.2s",
               }}>
               {label}
