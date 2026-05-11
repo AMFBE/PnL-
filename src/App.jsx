@@ -273,10 +273,10 @@ function PnLProvider({ children, user }) {
       if (local) setData(JSON.parse(local));
     } catch(e) {}
 
-    // Then sync from Supabase
+    // Then sync from Supabase — load ALL fields including note and mood
     supabase
       .from("pnl_entries")
-      .select("date_key, pnl, adherence")
+      .select("date_key, pnl, adherence, note, mood")
       .eq("user_id", user.id)
       .then(({ data: rows, error }) => {
         if (error) {
@@ -286,7 +286,14 @@ function PnLProvider({ children, user }) {
         }
         if (rows && rows.length > 0) {
           const map = {};
-          rows.forEach(r => { map[r.date_key] = { pnl: r.pnl, adherence: r.adherence }; });
+          rows.forEach(r => {
+            map[r.date_key] = {
+              pnl: r.pnl,
+              adherence: r.adherence,
+              note: r.note ?? "",
+              mood: r.mood ?? "",
+            };
+          });
           setData(map);
           // Sync to localStorage as backup
           try { localStorage.setItem(LS_KEY(user.id), JSON.stringify(map)); } catch(e) {}
@@ -736,6 +743,12 @@ function InputModal({ day, month, year, onClose }) {
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.4 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 80) onClose();
+        }}
         transition={{ type: "spring", stiffness: 340, damping: 32 }}
         onClick={e => e.stopPropagation()}
         style={{
@@ -749,10 +762,11 @@ function InputModal({ day, month, year, onClose }) {
           maxHeight: "92vh", overflowY: "auto",
           WebkitOverflowScrolling: "touch",
           position: "relative", zIndex: 501,
+          cursor: "grab",
         }}
       >
-        {/* Drag indicator */}
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)",
+        {/* Drag handle */}
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.25)",
           margin: "0 auto 14px", cursor: "grab" }} />
 
 
