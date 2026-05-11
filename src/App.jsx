@@ -1368,7 +1368,7 @@ function StatsTab({ yr, mo, setYr, setMo }) {
   return (
     <div style={{ minHeight: "100vh", position: "relative" }}>
       <MeshBackground />
-      <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top,20px) 14px 100px" }}>
+      <div style={{ position: "relative", zIndex: 10, maxWidth: 500, margin: "0 auto", padding: "env(safe-area-inset-top,20px) 14px 140px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 16, marginBottom: 20 }}>
@@ -1435,9 +1435,18 @@ function StatsTab({ yr, mo, setYr, setMo }) {
           )}
         </div>
 
-        {/* Bar chart - daily PnL with zero line */}
+        {/* Cumulative line chart — touch scrubbing — NOW FIRST */}
+        <CumulativeChart
+          chartData={chartData} cumPoints={cumPoints} linePath={linePath}
+          areaPath={areaPath} lineColor={lineColor} totalPnL={totalPnL}
+          minCum={minCum} maxCumRaw={maxCumRaw} zeroY={zeroY}
+          H={H} W={W} mo={mo} daysInMonth={daysInMonth}
+          fmtShort={fmtShort} t={t}
+        />
+
+        {/* Bar chart - daily PnL with zero line — NOW SECOND */}
         <div style={{ background:"rgba(255,255,255,0.04)", backdropFilter:"blur(20px)",
-          border:"1px solid rgba(255,255,255,0.09)", borderRadius:20, padding:"16px 14px 12px", marginBottom:14 }}>
+          border:"1px solid rgba(255,255,255,0.09)", borderRadius:20, padding:"16px 14px 20px", marginBottom:0 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
             <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", letterSpacing:"0.12em", fontFamily:"monospace" }}>{t.dailyPnL}</div>
             <div style={{ display:"flex", gap:12 }}>
@@ -1477,21 +1486,12 @@ function StatsTab({ yr, mo, setYr, setMo }) {
               );
             })}
           </div>
-          <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:6 }}>
             <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>1</span>
             <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>{Math.round(daysInMonth/2)}</span>
             <span style={{ fontSize:7, color:"rgba(255,255,255,0.18)", fontFamily:"monospace" }}>{daysInMonth}</span>
           </div>
         </div>
-
-        {/* Cumulative line chart — touch scrubbing */}
-        <CumulativeChart
-          chartData={chartData} cumPoints={cumPoints} linePath={linePath}
-          areaPath={areaPath} lineColor={lineColor} totalPnL={totalPnL}
-          minCum={minCum} maxCumRaw={maxCumRaw} zeroY={zeroY}
-          H={H} W={W} mo={mo} daysInMonth={daysInMonth}
-          fmtShort={fmtShort} t={t}
-        />
       </div>
     </div>
   );
